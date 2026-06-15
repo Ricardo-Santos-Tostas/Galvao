@@ -1,0 +1,14 @@
+<?php
+/**
+ * Copie este arquivo para config.local.php e preencha com seus dados.
+ * config.local.php não deve ser enviado para repositórios públicos.
+ */
+return [
+    'host'     => 'localhost',
+    'port'     => 3306,
+    'database' => 'advocacia',
+    'username' => 'root',
+    'password' => '',
+    'charset'  => 'utf8mb4',
+    'timezone' => 'America/Bahia',
+];
