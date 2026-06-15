@@ -44,7 +44,7 @@ set "ARQUIVO=sql\backup_advocacia.sql"
 echo Exportando banco para: %ARQUIVO%
 echo Aguarde...
 
-"%MYSQLDUMP%" -u root --connect-timeout=5 --databases advocacia --result-file="%ARQUIVO%" --default-character-set=utf8mb4
+"%MYSQLDUMP%" -u root --databases advocacia --result-file="%ARQUIVO%" --default-character-set=utf8mb4
 
 if errorlevel 1 (
     echo [ERRO] Falha ao exportar o banco.

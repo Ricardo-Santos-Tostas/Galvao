@@ -1,17 +1,9 @@
-# Python
+# Python (não necessário para rodar o sistema)
 venv/
 __pycache__/
 *.pyc
 
-# Dados locais (privacidade — não versionar clientes)
-advocacia/sql/backup_advocacia.sql
-sistema.db
-*.xlsx
-
-# Config local (use config.local.php.example)
-advocacia/config/config.local.php
-
-# Sistema
+# Arquivos temporários do sistema
 .DS_Store
 Thumbs.db
 *.log
