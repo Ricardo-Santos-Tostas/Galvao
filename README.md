@@ -12,12 +12,13 @@ Desenvolvido em **PHP + MySQL + JavaScript**, com interface inspirada no Microso
 
 1. [Requisitos](#requisitos)
 2. [Estrutura do projeto](#estrutura-do-projeto)
-3. [Transferir para outro PC — passo a passo completo](#transferir-para-outro-pc--passo-a-passo-completo)
-4. [Uso diário](#uso-diário)
-5. [Acesso na rede local (outros computadores)](#acesso-na-rede-local-outros-computadores)
-6. [Atualizar dados no GitHub (PC antigo)](#atualizar-dados-no-github-pc-antigo)
-7. [Solução de problemas](#solução-de-problemas)
-8. [Documentação adicional](#documentação-adicional)
+3. [Instalação automática (PowerShell)](#instalação-automática-powershell)
+4. [Transferir para outro PC — passo a passo completo](#transferir-para-outro-pc--passo-a-passo-completo)
+5. [Uso diário](#uso-diário)
+6. [Acesso na rede local (outros computadores)](#acesso-na-rede-local-outros-computadores)
+7. [Atualizar dados no GitHub (PC antigo)](#atualizar-dados-no-github-pc-antigo)
+8. [Solução de problemas](#solução-de-problemas)
+9. [Documentação adicional](#documentação-adicional)
 
 ---
 
@@ -68,6 +69,47 @@ Galvao/
 ├── sistema.db                         ← backup SQLite (opcional)
 └── Pasta1.xlsx                        ← planilha Excel original
 ```
+
+---
+
+## Instalação automática (PowerShell)
+
+Se você quer fazer **tudo por script** no PC novo (baixar do GitHub, copiar para XAMPP, configurar serviços automáticos, importar banco e liberar portas), use:
+
+```
+instalar_pc_novo.ps1
+```
+
+### O que o script faz automaticamente
+
+- Garante execução como **Administrador**
+- Instala `git` via `winget` (se necessário)
+- Tenta instalar o XAMPP via `winget` (se não estiver instalado)
+- Clona/atualiza o repositório em `C:\Servio\Galvao`
+- Copia `advocacia` para `C:\xampp\htdocs\advocacia`
+- Instala e configura **Apache** e **MySQL** como serviço do Windows (inicialização automática)
+- Libera portas no firewall (`80`, `443` e `8080`)
+- Importa o banco `backup_advocacia.sql` no MySQL
+- Executa validação final do sistema
+
+### Como executar (PC novo)
+
+1. Abra o **PowerShell como Administrador**
+2. Vá para a pasta onde está o projeto baixado
+3. Execute:
+
+```powershell
+Set-ExecutionPolicy -Scope Process Bypass -Force
+.\instalar_pc_novo.ps1
+```
+
+### Resultado esperado
+
+- Sistema disponível em `http://localhost/advocacia`
+- Na rede local: `http://IP_DO_PC/advocacia`
+- Apache e MySQL iniciando sozinhos após reiniciar o PC
+
+> Se o `winget` não conseguir instalar o XAMPP automaticamente, instale o XAMPP manualmente em `C:\xampp` e rode o script novamente.
 
 ---
 
@@ -301,6 +343,78 @@ git push
 ```
 
 > **Atenção:** o repositório contém dados de clientes. Mantenha o repositório como **privado** no GitHub.
+
+---
+
+## Enviar atualização de código para o cliente
+
+Quando você alterar o sistema no seu PC e quiser atualizar a máquina do cliente **sem perder os dados dele**:
+
+### No seu PC (desenvolvimento)
+
+1. Faça as alterações no código
+2. Teste localmente
+3. Envie para o GitHub:
+
+```powershell
+cd C:\Users\Ricardo\Desktop\Servio
+git add .
+git commit -m "Descreva o que mudou"
+git push
+```
+
+> Envie só **código** (PHP, CSS, JS). Não precisa exportar o banco do seu PC para atualizar o cliente.
+
+### No PC do cliente
+
+**Opção A — Script automático (recomendado)**
+
+Dê duplo clique em:
+
+```
+atualizar_sistema.bat
+```
+
+Ou no PowerShell:
+
+```powershell
+cd C:\Servio\Galvao
+.\atualizar_sistema.ps1
+```
+
+O script:
+- Baixa a versão nova do GitHub (`git pull`)
+- Copia para `C:\xampp\htdocs\advocacia`
+- **Preserva** o `config.local.php` do cliente
+- **Não reimporta** o banco (dados do cliente ficam intactos)
+- Reinicia o Apache
+
+**Opção B — Manual**
+
+```powershell
+cd C:\Servio\Galvao\Galvao
+git pull
+xcopy /E /Y advocacia C:\xampp\htdocs\advocacia
+```
+
+### Importante
+
+| Ação | Pode usar? | Motivo |
+|------|------------|--------|
+| `atualizar_sistema.bat` | Sim | Só atualiza código |
+| `instalar_pc_novo.ps1` | Não para atualizar | Reimporta o banco e **apaga** dados novos do cliente |
+| `git push` com `backup_advocacia.sql` | Cuidado | Só se quiser sobrescrever dados do cliente |
+
+### Fluxo resumido
+
+```
+Seu PC                    GitHub                    PC do cliente
+  |                         |                            |
+  |-- altera codigo --------|                            |
+  |-- git push ------------>|                            |
+  |                         |<-- atualizar_sistema.bat --|
+  |                         |     (git pull + copia)     |
+```
 
 ---
 

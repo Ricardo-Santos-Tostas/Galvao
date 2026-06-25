@@ -1,112 +1,687 @@
 <?php
+
 /**
+
  * Controller da API REST para autocomplete e operações AJAX.
+
  */
 
+
+
 require_once __DIR__ . '/../models/ProcessoModel.php';
+require_once __DIR__ . '/../models/PericiaModel.php';
+require_once __DIR__ . '/../models/UsuarioModel.php';
+require_once __DIR__ . '/../models/LogModel.php';
+require_once __DIR__ . '/../config/auth.php';
+require_once __DIR__ . '/../config/log.php';
+
+
 
 class ApiController
+
 {
+
     private ProcessoModel $model;
+    private PericiaModel $pericias;
+    private UsuarioModel $usuarios;
 
     public function __construct()
     {
         $this->model = new ProcessoModel();
+        $this->pericias = new PericiaModel();
+        $this->usuarios = new UsuarioModel();
     }
 
+
+
     public function handle(): void
+
     {
-        header('Content-Type: application/json; charset=utf-8');
 
         $acao = $_GET['acao'] ?? $_POST['acao'] ?? '';
 
-        try {
-            switch ($acao) {
-                case 'buscar':
-                    $this->buscar();
-                    break;
-                case 'registro':
-                    $this->registro();
-                    break;
-                case 'salvar':
-                    $this->salvar();
-                    break;
-                case 'proximo_id':
-                    $this->proximoId();
-                    break;
-                case 'aniversariantes':
-                    $this->aniversariantes();
-                    break;
-                default:
-                    $this->responder(['erro' => 'Ação inválida'], 400);
-            }
-        } catch (Throwable $e) {
-            $this->responder(['erro' => $e->getMessage()], 500);
+        Auth::iniciarSessao();
+        if (!Auth::usuario()) {
+            $this->responder(['erro' => 'Não autenticado'], 401);
         }
+
+
+
+        if (!in_array($acao, ['upload_foto', 'upload_documento'], true)) {
+
+            header('Content-Type: application/json; charset=utf-8');
+
+        }
+
+
+
+        try {
+
+            switch ($acao) {
+
+                case 'buscar':
+
+                    $this->buscar();
+
+                    break;
+
+                case 'registro':
+
+                    $this->registro();
+
+                    break;
+
+                case 'salvar':
+
+                    $this->salvar();
+
+                    break;
+
+                case 'proximo_id':
+
+                    $this->proximoId();
+
+                    break;
+
+                case 'aniversariantes':
+
+                    $this->aniversariantes();
+
+                    break;
+
+                case 'upload_foto':
+
+                    $this->uploadFoto();
+
+                    break;
+
+                case 'upload_documento':
+
+                    $this->uploadDocumento();
+
+                    break;
+
+                case 'pericia':
+
+                    $this->pericia();
+
+                    break;
+
+                case 'pericia_salvar':
+
+                    $this->periciaSalvar();
+
+                    break;
+
+                case 'usuario_salvar':
+
+                    $this->usuarioSalvar();
+
+                    break;
+
+                case 'usuario_excluir':
+
+                    $this->usuarioExcluir();
+
+                    break;
+
+                default:
+
+                    $this->responder(['erro' => 'Ação inválida'], 400);
+
+            }
+
+        } catch (Throwable $e) {
+
+            $this->responder(['erro' => $e->getMessage()], 500);
+
+        }
+
     }
+
+
 
     private function buscar(): void
+
     {
+
+        $tipo = $_GET['tipo'] ?? 'geral';
+        $this->exigirConsulta($tipo);
+
         $termo = $_GET['q'] ?? '';
-        $tipo  = $_GET['tipo'] ?? 'geral';
+
+
 
         $resultados = $this->model->autocomplete($termo, $tipo);
+
         $this->responder(['resultados' => $resultados]);
+
     }
+
+
 
     private function registro(): void
+
     {
-        $id = (int) ($_GET['id'] ?? 0);
-        if ($id <= 0) {
-            $this->responder(['erro' => 'ID inválido'], 400);
+
+        if (!Auth::podeVer('cadastro')
+            && !Auth::podeVer('consulta_processo')
+            && !Auth::podeVer('consulta_reclamante')
+            && !Auth::podeVer('consulta_reclamada')) {
+            $this->responder(['erro' => 'Sem permissão'], 403);
         }
+
+        $id = (int) ($_GET['id'] ?? 0);
+
+        if ($id <= 0) {
+
+            $this->responder(['erro' => 'ID inválido'], 400);
+
+        }
+
+
 
         $registro = $this->model->buscarPorId($id);
+
         if (!$registro) {
+
             $this->responder(['erro' => 'Registro não encontrado'], 404);
+
         }
 
+
+
         $this->responder(['registro' => $registro]);
+
     }
 
+
+
     private function salvar(): void
+
     {
+
+        if (!Auth::podeEditar('cadastro')) {
+            $this->responder(['erro' => 'Sem permissão para editar cadastros'], 403);
+        }
+
         $dados = json_decode(file_get_contents('php://input'), true);
+
+        if (!is_array($dados)) {
+
+            $dados = $_POST;
+
+        }
+
+        $idAntes = isset($dados['CADASTRO']) && $dados['CADASTRO'] !== '' ? (int) $dados['CADASTRO'] : 0;
+        $antes = ($idAntes > 0 && $this->model->registroExiste($idAntes))
+            ? $this->model->buscarPorId($idAntes)
+            : null;
+
+        $id = $this->model->salvar($dados);
+
+        $registro = $this->model->buscarPorId($id);
+
+        $nome = trim((string) ($registro['RECLAMANTE'] ?? ''));
+        $ref = '#' . $id;
+
+        if ($antes) {
+            $alteracoes = LogModel::diffCampos(
+                $antes,
+                $registro,
+                ProcessoModel::colunas(),
+                LogModel::rotulosCadastro()
+            );
+            $desc = 'Alterou cadastro ' . $ref . ($nome !== '' ? ' — ' . $nome : '');
+            Log::registrar('cadastro_editar', $desc, 'cadastro', $ref, ['alteracoes' => $alteracoes]);
+        } else {
+            $desc = 'Criou cadastro ' . $ref . ($nome !== '' ? ' — ' . $nome : '');
+            Log::registrar('cadastro_criar', $desc, 'cadastro', $ref);
+        }
+
+
+
+        $this->responder([
+
+            'sucesso'  => true,
+
+            'id'       => $id,
+
+            'registro' => $registro,
+
+        ]);
+
+    }
+
+
+
+    private function proximoId(): void
+
+    {
+
+        if (!Auth::podeEditar('cadastro')) {
+            $this->responder(['erro' => 'Sem permissão para editar cadastros'], 403);
+        }
+
+        $id = $this->model->proximoId();
+
+        $this->responder(['id' => $id]);
+
+    }
+
+
+
+    private function aniversariantes(): void
+
+    {
+
+        if (!Auth::podeVerAniversariantes()) {
+            $this->responder(['erro' => 'Sem permissão para visualizar aniversariantes'], 403);
+        }
+
+        $lista = $this->model->aniversariantesDoDia();
+
+        $this->responder([
+
+            'total'           => count($lista),
+
+            'aniversariantes' => $lista,
+
+            'data'            => date('d/m/Y'),
+
+            'data_referencia' => date('d/m') . ' (dia/mês de hoje)',
+
+        ]);
+
+    }
+
+
+
+    private function uploadFoto(): void
+
+    {
+
+        if (!Auth::podeEditar('cadastro')) {
+            $this->responder(['erro' => 'Sem permissão para editar cadastros'], 403);
+        }
+
+        $id = (int) ($_POST['id'] ?? 0);
+
+        if ($id <= 0 || empty($_FILES['arquivo']['tmp_name'])) {
+
+            $this->responder(['erro' => 'Cadastro ou arquivo inválido'], 400);
+
+        }
+
+
+
+        $file = $_FILES['arquivo'];
+
+        if ($file['error'] !== UPLOAD_ERR_OK) {
+
+            $this->responder(['erro' => 'Falha no upload da foto'], 400);
+
+        }
+
+
+
+        $mime = mime_content_type($file['tmp_name']) ?: $file['type'];
+
+        if (!str_starts_with($mime, 'image/')) {
+
+            $this->responder(['erro' => 'A foto deve ser uma imagem (JPG, PNG, etc.)'], 400);
+
+        }
+
+
+
+        if ($file['size'] > 5 * 1024 * 1024) {
+
+            $this->responder(['erro' => 'Foto muito grande (máx. 5 MB)'], 400);
+
+        }
+
+
+
+        $conteudo = file_get_contents($file['tmp_name']);
+
+        $this->model->salvarFoto($id, $conteudo, $mime);
+
+        Log::registrar(
+            'cadastro_foto',
+            'Importou foto no cadastro #' . $id,
+            'cadastro',
+            '#' . $id
+        );
+
+
+
+        $this->responder([
+
+            'sucesso'  => true,
+
+            'registro' => $this->model->buscarPorId($id),
+
+        ]);
+
+    }
+
+
+
+    private function uploadDocumento(): void
+
+    {
+
+        if (!Auth::podeEditar('cadastro')) {
+            $this->responder(['erro' => 'Sem permissão para editar cadastros'], 403);
+        }
+
+        $id = (int) ($_POST['id'] ?? 0);
+
+        if ($id <= 0 || empty($_FILES['arquivo']['tmp_name'])) {
+
+            $this->responder(['erro' => 'Cadastro ou arquivo inválido'], 400);
+
+        }
+
+
+
+        $file = $_FILES['arquivo'];
+
+        if ($file['error'] !== UPLOAD_ERR_OK) {
+
+            $this->responder(['erro' => 'Falha no upload do documento'], 400);
+
+        }
+
+
+
+        $mime = mime_content_type($file['tmp_name']) ?: $file['type'];
+
+        $permitidos = ['application/pdf', 'image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+
+        if (!in_array($mime, $permitidos, true)) {
+
+            $this->responder(['erro' => 'Formato não permitido. Use PDF ou imagem.'], 400);
+
+        }
+
+
+
+        if ($file['size'] > 15 * 1024 * 1024) {
+
+            $this->responder(['erro' => 'Documento muito grande (máx. 15 MB)'], 400);
+
+        }
+
+
+
+        $nome = $file['name'] ?: 'documento';
+
+        $conteudo = file_get_contents($file['tmp_name']);
+
+        $this->model->salvarDocumento($id, $conteudo, $mime, $nome);
+
+        Log::registrar(
+            'cadastro_documento',
+            'Importou documento no cadastro #' . $id . ' — ' . $nome,
+            'cadastro',
+            '#' . $id,
+            ['arquivo' => $nome]
+        );
+
+
+
+        $this->responder([
+
+            'sucesso'  => true,
+
+            'registro' => $this->model->buscarPorId($id),
+
+        ]);
+
+    }
+
+
+
+    private function pericia(): void
+
+    {
+
+        if (!Auth::podeVer('pericias')) {
+            $this->responder(['erro' => 'Sem permissão para perícias'], 403);
+        }
+
+        $id = (int) ($_GET['id'] ?? 0);
+
+        if ($id <= 0) {
+
+            $this->responder(['erro' => 'ID inválido'], 400);
+
+        }
+
+
+
+        $pericia = $this->pericias->buscarPorId($id);
+
+        if (!$pericia) {
+
+            $this->responder(['erro' => 'Perícia não encontrada'], 404);
+
+        }
+
+
+
+        $this->responder(['pericia' => $pericia]);
+
+    }
+
+
+
+    private function periciaSalvar(): void
+
+    {
+
+        if (!Auth::podeEditar('pericias')) {
+            $this->responder(['erro' => 'Sem permissão para editar perícias'], 403);
+        }
+
+        $dados = json_decode(file_get_contents('php://input'), true);
+
+        if (!is_array($dados)) {
+
+            $dados = $_POST;
+
+        }
+
+
+
+        $idPericia = isset($dados['ID']) && $dados['ID'] !== '' ? (int) $dados['ID'] : 0;
+        $antes = ($idPericia > 0 && $this->pericias->existe($idPericia))
+            ? $this->pericias->buscarPorId($idPericia)
+            : null;
+
+        $id = $this->pericias->salvar($dados);
+
+        $pericia = $this->pericias->buscarPorId($id);
+
+        $ref = 'Perícia #' . $id;
+        $nome = trim((string) ($pericia['RECLAMANTE'] ?? ''));
+
+        if ($antes) {
+            $alteracoes = LogModel::diffCampos(
+                $antes,
+                $pericia,
+                PericiaModel::colunas(),
+                LogModel::rotulosPericia()
+            );
+            Log::registrar(
+                'pericia_editar',
+                'Alterou ' . $ref . ($nome !== '' ? ' — ' . $nome : ''),
+                'pericias',
+                '#' . $id,
+                ['alteracoes' => $alteracoes]
+            );
+        } else {
+            Log::registrar(
+                'pericia_criar',
+                'Criou ' . $ref . ($nome !== '' ? ' — ' . $nome : ''),
+                'pericias',
+                '#' . $id
+            );
+        }
+
+
+
+        $this->responder([
+
+            'sucesso' => true,
+
+            'id'      => $id,
+
+            'pericia' => $pericia,
+
+        ]);
+
+    }
+
+
+
+    private function usuarioSalvar(): void
+
+    {
+
+        if (!Auth::isAdmin()) {
+            $this->responder(['erro' => 'Acesso negado'], 403);
+        }
+
+        $dados = json_decode(file_get_contents('php://input'), true);
+
         if (!is_array($dados)) {
             $dados = $_POST;
         }
 
-        $id = $this->model->salvar($dados);
-        $registro = $this->model->buscarPorId($id);
+        $idEdicao = isset($dados['id']) && $dados['id'] !== '' ? (int) $dados['id'] : 0;
+        $antes = $idEdicao > 0 ? $this->usuarios->buscarPorId($idEdicao) : null;
+
+        $id = $this->usuarios->salvar($dados);
+        $usuario = $this->usuarios->buscarPorId($id);
+
+        if ($antes) {
+            Log::registrar(
+                'usuario_editar',
+                'Alterou usuário ' . $usuario['login'] . ' — ' . $usuario['nome'],
+                'usuarios',
+                '@' . $usuario['login']
+            );
+        } else {
+            Log::registrar(
+                'usuario_criar',
+                'Criou usuário ' . $usuario['login'] . ' — ' . $usuario['nome'],
+                'usuarios',
+                '@' . $usuario['login']
+            );
+        }
 
         $this->responder([
-            'sucesso'  => true,
-            'id'       => $id,
-            'registro' => $registro,
+            'sucesso' => true,
+            'id'      => $id,
+            'usuario' => $this->usuarios->buscarPorId($id),
         ]);
+
     }
 
-    private function proximoId(): void
+
+
+    private function usuarioExcluir(): void
+
     {
-        $id = $this->model->proximoId();
-        $this->responder(['id' => $id]);
+
+        if (!Auth::isAdmin()) {
+            $this->responder(['erro' => 'Acesso negado'], 403);
+        }
+
+        $dados = json_decode(file_get_contents('php://input'), true);
+
+        if (!is_array($dados)) {
+            $dados = $_POST;
+        }
+
+        $id = (int) ($dados['id'] ?? 0);
+
+        if ($id <= 0) {
+            $this->responder(['erro' => 'ID inválido'], 400);
+        }
+
+        $logado = Auth::usuario();
+
+        if ($logado && (int) $logado['id'] === $id) {
+            $this->responder(['erro' => 'Você não pode excluir seu próprio usuário'], 400);
+        }
+
+        $usuario = $this->usuarios->buscarPorId($id);
+
+        $this->usuarios->excluir($id);
+
+        if ($usuario) {
+            Log::registrar(
+                'usuario_excluir',
+                'Excluiu usuário ' . $usuario['login'] . ' — ' . $usuario['nome'],
+                'usuarios',
+                '@' . $usuario['login']
+            );
+        }
+
+        $this->responder(['sucesso' => true]);
+
     }
 
-    private function aniversariantes(): void
+
+
+    private function exigirConsulta(string $tipo): void
+
     {
-        $lista = $this->model->aniversariantesDoDia();
-        $this->responder([
-            'total'           => count($lista),
-            'aniversariantes' => $lista,
-            'data'            => date('d/m/Y'),
-            'data_referencia' => date('d/m') . ' (dia/mês de hoje)',
-        ]);
+
+        $mapa = [
+            'geral'               => 'consulta_processo',
+            'processo'            => 'consulta_processo',
+            'consulta_processo'   => 'consulta_processo',
+            'reclamante'          => 'consulta_reclamante',
+            'consulta_reclamante' => 'consulta_reclamante',
+            'reclamada'           => 'consulta_reclamada',
+            'consulta_reclamada'  => 'consulta_reclamada',
+        ];
+
+        $modulo = $mapa[$tipo] ?? 'consulta_processo';
+
+        if ($tipo === 'geral') {
+            if (Auth::podeVer('cadastro') || Auth::podeVer('consulta_processo')
+                || Auth::podeVer('consulta_reclamante') || Auth::podeVer('consulta_reclamada')) {
+                return;
+            }
+            $this->responder(['erro' => 'Sem permissão'], 403);
+        }
+
+        if (!Auth::podeVer($modulo)) {
+            $this->responder(['erro' => 'Sem permissão'], 403);
+        }
+
     }
+
+
 
     private function responder(array $dados, int $status = 200): void
+
     {
+
         http_response_code($status);
+
         echo json_encode($dados, JSON_UNESCAPED_UNICODE);
+
         exit;
+
     }
+
 }
+
+

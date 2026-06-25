@@ -2,12 +2,32 @@
 /**
  * Menu principal — painel de controle do sistema.
  */
+require_once __DIR__ . '/config/auth.php';
 require_once __DIR__ . '/models/ProcessoModel.php';
+
+Auth::requerLogin();
 
 $pagina_atual = 'menu';
 $model = new ProcessoModel();
 $totalProcessos = $model->contarProcessos();
 $totalFormatado = number_format($totalProcessos, 0, ',', '.');
+$menuItens = Auth::linksMenu();
+$podeAniversariantes = Auth::podeVerAniversariantes();
+$podeEnviarAniv = Auth::podeEnviarAniversario();
+$isAdmin = Auth::isAdmin();
+
+function iconeMenu(string $tipo): string {
+    $icones = [
+        'user-plus' => '<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/>',
+        'search'    => '<circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>',
+        'user'      => '<path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>',
+        'building'  => '<path d="M3 21h18"/><path d="M5 21V7l8-4v18"/><path d="M19 21V11l-6-4"/>',
+        'calendar'  => '<rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>',
+        'file'      => '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/>',
+        'check'     => '<path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>',
+    ];
+    return $icones[$tipo] ?? $icones['file'];
+}
 ?>
 <!DOCTYPE html>
 <html lang="pt-BR">
@@ -35,64 +55,51 @@ $totalFormatado = number_format($totalProcessos, 0, ',', '.');
                     <span class="badge-number"><?= htmlspecialchars($totalFormatado) ?></span>
                     <span class="badge-label">Processos cadastrados</span>
                 </div>
+                <?php if ($podeAniversariantes): ?>
                 <button type="button" class="hero-btn-aniv" id="btnAniversariantes">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M20 21v-8a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8"/><path d="M4 16s.5-1 2-1 2.5 2 4 2 2.5-2 4-2 2.5 2 4 2 2-1 2-1"/><path d="M2 21h20"/><path d="M7 8v3"/><path d="M12 8v3"/><path d="M17 8v3"/><path d="M7 4h.01"/><path d="M12 4h.01"/><path d="M17 4h.01"/></svg>
                     Aniversariantes do dia
                 </button>
+                <?php endif; ?>
             </div>
         </section>
 
         <section class="menu-grid">
-            <a href="cadastro.php" class="menu-card">
+            <?php foreach ($menuItens as $item): ?>
+            <a href="<?= htmlspecialchars($item['href']) ?>" class="menu-card">
                 <div class="card-icon">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><?= iconeMenu($item['icon']) ?></svg>
                 </div>
-                <h2>Cadastro</h2>
-                <p>Incluir ou editar clientes e processos</p>
+                <h2><?= htmlspecialchars($item['titulo']) ?></h2>
+                <p><?= htmlspecialchars($item['desc']) ?></p>
+            </a>
+            <?php endforeach; ?>
+
+            <?php if ($isAdmin): ?>
+            <a href="usuarios.php" class="menu-card menu-card-admin">
+                <div class="card-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                </div>
+                <h2>Usuários</h2>
+                <p>Criar usuários e definir permissões</p>
             </a>
 
-            <a href="consulta.php?tipo=processo" class="menu-card">
+            <a href="log.php" class="menu-card menu-card-admin">
                 <div class="card-icon">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><line x1="10" y1="9" x2="8" y2="9"/></svg>
                 </div>
-                <h2>Consulta por Processo</h2>
-                <p>Buscar pelo número do processo</p>
+                <h2>Log de atividades</h2>
+                <p>Quem alterou o quê e quando</p>
             </a>
-
-            <a href="consulta.php?tipo=reclamante" class="menu-card">
-                <div class="card-icon">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-                </div>
-                <h2>Consulta por Reclamante</h2>
-                <p>Localizar pelo nome do reclamante</p>
-            </a>
-
-            <a href="consulta.php?tipo=reclamada" class="menu-card">
-                <div class="card-icon">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 21h18"/><path d="M5 21V7l8-4v18"/><path d="M19 21V11l-6-4"/></svg>
-                </div>
-                <h2>Consulta por Reclamada</h2>
-                <p>Localizar pelo nome da reclamada</p>
-            </a>
-
-            <a href="relatorio.php?tipo=audiencias" class="menu-card">
-                <div class="card-icon">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-                </div>
-                <h2>Pauta de Audiências</h2>
-                <p>Relatório de audiências agendadas</p>
-            </a>
-
-            <a href="relatorio.php?tipo=reclamante" class="menu-card">
-                <div class="card-icon">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
-                </div>
-                <h2>Pauta Reclamante</h2>
-                <p>Lista completa por reclamante</p>
-            </a>
+            <?php endif; ?>
         </section>
+
+        <?php if (empty($menuItens) && !$isAdmin): ?>
+        <p class="menu-vazio">Seu usuário não possui permissão para acessar nenhum módulo. Contate o administrador.</p>
+        <?php endif; ?>
     </main>
 
+    <?php if ($podeAniversariantes): ?>
     <!-- Modal Aniversariantes -->
     <div class="modal-aniv" id="modalAniversario" hidden>
         <div class="modal-aniv-backdrop" id="modalAnivBackdrop"></div>
@@ -104,6 +111,7 @@ $totalFormatado = number_format($totalProcessos, 0, ',', '.');
             </header>
             <div class="modal-aniv-body">
                 <div class="modal-aniv-lista-wrap" id="wrapListaAniv">
+                    <?php if ($podeEnviarAniv): ?>
                     <div class="aniv-lista-toolbar no-print">
                         <label class="aniv-marcar-todos">
                             <input type="checkbox" id="anivMarcarTodos">
@@ -114,17 +122,21 @@ $totalFormatado = number_format($totalProcessos, 0, ',', '.');
                             Enviar para selecionados
                         </button>
                     </div>
+                    <?php endif; ?>
                     <div class="modal-aniv-lista" id="listaAniversariantes">
                         <p class="modal-aniv-loading">Carregando...</p>
                     </div>
                 </div>
                 <div class="modal-aniv-detalhe" id="detalheAniversariante" hidden>
                     <div class="aniv-detalhe-header">
+                        <?php if ($podeEnviarAniv): ?>
                         <input type="checkbox" id="anivCheckDetalhe" class="aniv-check-detalhe" checked title="Marcar para envio">
+                        <?php endif; ?>
                         <h3 id="anivNome"></h3>
                     </div>
                     <p class="aniv-info" id="anivInfo"></p>
                     <p class="aniv-enviando-para" id="anivEnviandoPara" hidden></p>
+                    <?php if ($podeEnviarAniv): ?>
                     <div class="aniv-campo">
                         <label for="anivMensagem">Mensagem</label>
                         <textarea id="anivMensagem" rows="4" placeholder="Digite sua mensagem de parabéns..."></textarea>
@@ -154,12 +166,23 @@ $totalFormatado = number_format($totalProcessos, 0, ',', '.');
                         </button>
                     </div>
                     <p class="aniv-aviso" id="anivAviso" hidden></p>
+                    <?php else: ?>
+                    <div class="aniv-acoes">
+                        <button type="button" class="btn-aniv-voltar" id="btnAnivVoltar">← Voltar</button>
+                    </div>
+                    <?php endif; ?>
                 </div>
             </div>
         </div>
     </div>
+    <?php endif; ?>
 
     <?php include __DIR__ . '/views/partials/footer.php'; ?>
-    <script src="assets/js/dashboard.js?v=5"></script>
+    <script>
+        window.APP_PERMISSOES = <?= json_encode(Auth::permissoesJson(), JSON_UNESCAPED_UNICODE) ?>;
+    </script>
+    <?php if ($podeAniversariantes): ?>
+    <script src="assets/js/dashboard.js?v=6"></script>
+    <?php endif; ?>
 </body>
 </html>

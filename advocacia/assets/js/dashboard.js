@@ -10,6 +10,9 @@ const Dashboard = (() => {
     let indiceFila = 0;
     let imagemImportada = null; // { blob, url, nome }
 
+    const perm = window.APP_PERMISSOES || {};
+    const podeEnviar = !!perm.aniversariantes_enviar;
+
     function init() {
         document.getElementById('btnAniversariantes')?.addEventListener('click', abrirModal);
         document.getElementById('btnFecharAniv')?.addEventListener('click', fecharModal);
@@ -65,6 +68,16 @@ const Dashboard = (() => {
 
             lista.innerHTML = aniversariantes.map((p, i) => {
                 const semTel = !p.telefone;
+                if (!podeEnviar) {
+                    return `
+                    <button type="button" class="aniv-item aniv-item-somente-ver${semTel ? ' aniv-sem-telefone' : ''}" data-index="${i}">
+                        <span class="aniv-item-nome">${escapeHtml(p.nome)}</span>
+                        <span class="aniv-item-meta">
+                            ${p.cpf ? `<span class="aniv-item-cpf">CPF: ${escapeHtml(p.cpf)}</span>` : ''}
+                            <span class="aniv-item-idade">${p.idade !== null ? p.idade + ' anos' : ''}</span>
+                        </span>
+                    </button>`;
+                }
                 return `
                 <div class="aniv-item-row${semTel ? ' aniv-item-row-sem-tel' : ''}">
                     <input type="checkbox" class="aniv-check-item" id="aniv-chk-${i}" data-index="${i}"
@@ -74,6 +87,7 @@ const Dashboard = (() => {
                             title="${semTel ? 'Sem telefone cadastrado' : ''}">
                         <span class="aniv-item-nome">${escapeHtml(p.nome)}</span>
                         <span class="aniv-item-meta">
+                            ${p.cpf ? `<span class="aniv-item-cpf">CPF: ${escapeHtml(p.cpf)}</span>` : ''}
                             ${semTel ? '<span class="aniv-tag-sem-tel">Sem telefone</span>' : ''}
                             <span class="aniv-item-idade">${p.idade !== null ? p.idade + ' anos' : ''}</span>
                         </span>
@@ -92,11 +106,12 @@ const Dashboard = (() => {
 
             lista.querySelectorAll('.aniv-item').forEach(btn => {
                 btn.addEventListener('click', () => {
-                    abrirDetalhe(parseInt(btn.dataset.index, 10), 'individual');
+                    abrirDetalhe(parseInt(btn.dataset.index, 10), podeEnviar ? 'individual' : 'visualizar');
                 });
             });
 
-            document.getElementById('anivMarcarTodos').checked = false;
+            const chkTodos = document.getElementById('anivMarcarTodos');
+            if (chkTodos) chkTodos.checked = false;
             atualizarContador();
         } catch (err) {
             lista.innerHTML = '<p class="modal-aniv-vazio">Erro ao carregar aniversariantes.</p>';
@@ -118,8 +133,10 @@ const Dashboard = (() => {
 
     function atualizarContador() {
         const n = marcados.size;
-        document.getElementById('anivContador').textContent = n + ' selecionado' + (n !== 1 ? 's' : '');
-        document.getElementById('btnEnviarSelecionados').disabled = n === 0;
+        const contador = document.getElementById('anivContador');
+        const btnSel = document.getElementById('btnEnviarSelecionados');
+        if (contador) contador.textContent = n + ' selecionado' + (n !== 1 ? 's' : '');
+        if (btnSel) btnSel.disabled = n === 0;
 
         const todos = aniversariantes.length > 0 && n === aniversariantes.length;
         const chkTodos = document.getElementById('anivMarcarTodos');
@@ -159,21 +176,27 @@ const Dashboard = (() => {
             btnTexto.textContent = filaEnvio.length > 1 ? 'Enviar e próximo' : 'Enviar mensagem';
         } else {
             document.getElementById('anivNome').textContent = pessoa.nome;
-            enviandoPara.hidden = true;
-            checkDetalhe.hidden = false;
-            checkDetalhe.checked = marcados.has(index);
-            checkDetalhe.dataset.index = index;
+            if (enviandoPara) enviandoPara.hidden = true;
+            if (checkDetalhe) {
+                checkDetalhe.hidden = false;
+                checkDetalhe.checked = marcados.has(index);
+                checkDetalhe.dataset.index = index;
+            }
 
             let info = '';
-            if (pessoa.data_nasc) info += 'Nascimento: ' + pessoa.data_nasc;
+            if (pessoa.cpf) info += 'CPF: ' + pessoa.cpf;
+            if (pessoa.data_nasc) info += (info ? ' · ' : '') + 'Nascimento: ' + pessoa.data_nasc;
             if (pessoa.idade !== null) info += (info ? ' · ' : '') + pessoa.idade + ' anos';
             if (pessoa.fone_display) info += (info ? ' · ' : '') + 'Tel: ' + pessoa.fone_display;
             document.getElementById('anivInfo').textContent = info;
-            btnTexto.textContent = 'Enviar mensagem';
+            if (btnTexto) btnTexto.textContent = 'Enviar mensagem';
         }
 
-        const msgPadrao = `Olá, {nome}! 🎂\n\nA equipe Moura Galvão Advogados Associados deseja a você um feliz aniversário, com muita saúde, paz e realizações!\n\nUm abraço.`;
-        document.getElementById('anivMensagem').value = msgPadrao;
+        const msgEl = document.getElementById('anivMensagem');
+        if (msgEl) {
+            const msgPadrao = `Olá, {nome}! 🎂\n\nA equipe Moura Galvão Advogados Associados deseja a você um feliz aniversário, com muita saúde, paz e realizações!\n\nUm abraço.`;
+            msgEl.value = msgPadrao;
+        }
 
         atualizarAvisoTelefone(pessoa);
     }
@@ -269,6 +292,8 @@ const Dashboard = (() => {
     }
 
     function enviarWhatsApp() {
+        if (!podeEnviar) return;
+
         const template = document.getElementById('anivMensagem').value.trim();
         const comImagem = document.getElementById('anivComImagem').checked;
 

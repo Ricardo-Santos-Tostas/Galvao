@@ -4,6 +4,7 @@
  */
 
 require_once __DIR__ . '/../config/database.php';
+require_once __DIR__ . '/TelefoneBr.php';
 
 class ProcessoModel
 {
@@ -24,19 +25,127 @@ class ProcessoModel
             'FALAR_COM_FONE_1_', 'FALAR_COM_FONE_2_', 'FALAR_COM_FONE_3_', 'FALAR_COM_FONE_4_',
             'RECLAMADA', 'END_RDA', 'JUNTA', 'PROC',
             'DIA_AUD', 'HORA_AUD', 'PRA_A_DIA', 'PRA_A_HORA',
-            'ANDAMENTO', 'CTPS', 'IDENTIDADE', 'CPF',
+            'ANDAMENTO', 'CTPS', 'IDENTIDADE', 'CPF', 'AREA',
             'COL_2__RECLAMADA', 'END_RDA_1', 'cxpra_a',
+        ];
+    }
+
+    public static function areasJuridicas(): array
+    {
+        return [
+            'trabalhista'      => 'Trabalhista',
+            'previdenciario'   => 'Previdenciário',
+            'consumidor'       => 'Consumidor',
         ];
     }
 
     public function buscarPorId(int $id): ?array
     {
-        $sql = 'SELECT * FROM ' . $this->tabela . ' WHERE ' . sqlId('CADASTRO') . ' = :id LIMIT 1';
+        $cols = array_map('sqlId', self::colunas());
+        $sql = 'SELECT ' . implode(', ', $cols) . ', '
+            . sqlId('DOCUMENTO_NOME') . ', ' . sqlId('DOCUMENTO_TIPO') . ', '
+            . '(CASE WHEN ' . sqlId('FOTO') . ' IS NOT NULL AND LENGTH(' . sqlId('FOTO') . ') > 0 THEN 1 ELSE 0 END) AS TEM_FOTO, '
+            . '(CASE WHEN ' . sqlId('DOCUMENTO') . ' IS NOT NULL AND LENGTH(' . sqlId('DOCUMENTO') . ') > 0 THEN 1 ELSE 0 END) AS TEM_DOCUMENTO '
+            . 'FROM ' . $this->tabela . ' WHERE ' . sqlId('CADASTRO') . ' = :id LIMIT 1';
         $stmt = $this->db->prepare($sql);
         $stmt->execute(['id' => $id]);
         $row = $stmt->fetch();
 
-        return $row ? $this->formatarRegistro($row) : null;
+        if (!$row) {
+            return null;
+        }
+
+        $formatado = $this->formatarRegistro($row);
+        $formatado['tem_foto'] = (bool) ($row['TEM_FOTO'] ?? false);
+        $formatado['tem_documento'] = (bool) ($row['TEM_DOCUMENTO'] ?? false);
+        $formatado['documento_nome'] = $row['DOCUMENTO_NOME'] ?? null;
+
+        if ($formatado['tem_foto']) {
+            $formatado['foto_url'] = 'midia.php?id=' . $id . '&tipo=foto&t=' . time();
+        }
+        if ($formatado['tem_documento']) {
+            $formatado['documento_url'] = 'midia.php?id=' . $id . '&tipo=documento';
+        }
+
+        return $formatado;
+    }
+
+    public function registroExiste(int $id): bool
+    {
+        $sql = 'SELECT 1 FROM ' . $this->tabela . ' WHERE ' . sqlId('CADASTRO') . ' = :id LIMIT 1';
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute(['id' => $id]);
+        return (bool) $stmt->fetchColumn();
+    }
+
+    public function salvarFoto(int $id, string $conteudo, string $mime): void
+    {
+        if (!$this->registroExiste($id)) {
+            throw new RuntimeException('Cadastro não encontrado. Salve o registro antes de importar a foto.');
+        }
+
+        $sql = 'UPDATE ' . $this->tabela . ' SET ' . sqlId('FOTO') . ' = :foto, '
+            . sqlId('FOTO_TIPO') . ' = :tipo WHERE ' . sqlId('CADASTRO') . ' = :id';
+        $stmt = $this->db->prepare($sql);
+        $stmt->bindValue(':foto', $conteudo, PDO::PARAM_LOB);
+        $stmt->bindValue(':tipo', $mime);
+        $stmt->bindValue(':id', $id, PDO::PARAM_INT);
+        $stmt->execute();
+    }
+
+    public function salvarDocumento(int $id, string $conteudo, string $mime, string $nome): void
+    {
+        if (!$this->registroExiste($id)) {
+            throw new RuntimeException('Cadastro não encontrado. Salve o registro antes de importar o documento.');
+        }
+
+        $sql = 'UPDATE ' . $this->tabela . ' SET ' . sqlId('DOCUMENTO') . ' = :doc, '
+            . sqlId('DOCUMENTO_TIPO') . ' = :tipo, ' . sqlId('DOCUMENTO_NOME') . ' = :nome WHERE '
+            . sqlId('CADASTRO') . ' = :id';
+        $stmt = $this->db->prepare($sql);
+        $stmt->bindValue(':doc', $conteudo, PDO::PARAM_LOB);
+        $stmt->bindValue(':tipo', $mime);
+        $stmt->bindValue(':nome', $nome);
+        $stmt->bindValue(':id', $id, PDO::PARAM_INT);
+        $stmt->execute();
+    }
+
+    public function obterFoto(int $id): ?array
+    {
+        $sql = 'SELECT ' . sqlId('FOTO') . ', ' . sqlId('FOTO_TIPO') . ' FROM ' . $this->tabela
+            . ' WHERE ' . sqlId('CADASTRO') . ' = :id LIMIT 1';
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute(['id' => $id]);
+        $row = $stmt->fetch();
+
+        if (!$row || empty($row['FOTO'])) {
+            return null;
+        }
+
+        return [
+            'conteudo' => $row['FOTO'],
+            'tipo'     => $row['FOTO_TIPO'] ?: 'image/jpeg',
+        ];
+    }
+
+    public function obterDocumento(int $id): ?array
+    {
+        $sql = 'SELECT ' . sqlId('DOCUMENTO') . ', ' . sqlId('DOCUMENTO_TIPO') . ', '
+            . sqlId('DOCUMENTO_NOME') . ' FROM ' . $this->tabela
+            . ' WHERE ' . sqlId('CADASTRO') . ' = :id LIMIT 1';
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute(['id' => $id]);
+        $row = $stmt->fetch();
+
+        if (!$row || empty($row['DOCUMENTO'])) {
+            return null;
+        }
+
+        return [
+            'conteudo' => $row['DOCUMENTO'],
+            'tipo'     => $row['DOCUMENTO_TIPO'] ?: 'application/octet-stream',
+            'nome'     => $row['DOCUMENTO_NOME'] ?: 'documento',
+        ];
     }
 
     public function autocomplete(string $termo, string $tipo = 'geral', int $limite = 20): array
@@ -48,41 +157,51 @@ class ProcessoModel
 
         $like = '%' . $termo . '%';
         $inicio = $termo . '%';
+        $params = [];
 
         switch ($tipo) {
             case 'processo':
-                $where = sqlId('PROC') . ' LIKE :w1';
-                $params = ['w1' => $like];
+                $where = $this->montarCondicaoBusca([
+                    sqlId('PROC') . ' LIKE :w1',
+                ], $termo, $params, 'w1', $like);
                 break;
             case 'reclamante':
-                $where = sqlId('RECLAMANTE') . ' LIKE :w1';
-                $params = ['w1' => $like];
+                $where = $this->montarCondicaoBusca([
+                    sqlId('RECLAMANTE') . ' LIKE :w1',
+                ], $termo, $params, 'w1', $like);
                 break;
             case 'reclamada':
-                $where = sqlId('RECLAMADA') . ' LIKE :w1 OR ' . sqlId('COL_2__RECLAMADA') . ' LIKE :w2';
-                $params = ['w1' => $like, 'w2' => $like];
+                $where = $this->montarCondicaoBusca([
+                    sqlId('RECLAMADA') . ' LIKE :w1',
+                    sqlId('COL_2__RECLAMADA') . ' LIKE :w2',
+                ], $termo, $params, 'w1', $like, ['w2' => $like]);
                 break;
             default:
-                $where = sqlId('RECLAMANTE') . ' LIKE :w1 OR ' . sqlId('RECLAMADA') . ' LIKE :w2'
-                    . ' OR ' . sqlId('COL_2__RECLAMADA') . ' LIKE :w3 OR ' . sqlId('PROC') . ' LIKE :w4';
-                $params = ['w1' => $like, 'w2' => $like, 'w3' => $like, 'w4' => $like];
+                $where = $this->montarCondicaoBusca([
+                    sqlId('RECLAMANTE') . ' LIKE :w1',
+                    sqlId('RECLAMADA') . ' LIKE :w2',
+                    sqlId('COL_2__RECLAMADA') . ' LIKE :w3',
+                    sqlId('PROC') . ' LIKE :w4',
+                ], $termo, $params, 'w1', $like, ['w2' => $like, 'w3' => $like, 'w4' => $like]);
                 break;
         }
 
         $sql = '
             SELECT ' . sqlId('CADASTRO') . ', ' . sqlId('RECLAMANTE') . ', '
-            . sqlId('RECLAMADA') . ', ' . sqlId('PROC') . '
+            . sqlId('RECLAMADA') . ', ' . sqlId('PROC') . ', ' . sqlId('CPF') . '
             FROM ' . $this->tabela . '
             WHERE ' . $where . '
             ORDER BY
                 CASE
                     WHEN ' . sqlId('RECLAMANTE') . ' LIKE :o1 THEN 0
-                    WHEN ' . sqlId('PROC') . ' LIKE :o2 THEN 1
-                    WHEN ' . sqlId('RECLAMADA') . ' LIKE :o3 THEN 2
-                    WHEN ' . sqlId('RECLAMANTE') . ' LIKE :o4 THEN 3
-                    WHEN ' . sqlId('PROC') . ' LIKE :o5 THEN 4
-                    WHEN ' . sqlId('RECLAMADA') . ' LIKE :o6 THEN 5
-                    ELSE 6
+                    WHEN ' . sqlId('CPF') . ' LIKE :o7 THEN 1
+                    WHEN ' . sqlId('PROC') . ' LIKE :o2 THEN 2
+                    WHEN ' . sqlId('RECLAMADA') . ' LIKE :o3 THEN 3
+                    WHEN ' . sqlId('RECLAMANTE') . ' LIKE :o4 THEN 4
+                    WHEN ' . sqlId('CPF') . ' LIKE :o8 THEN 5
+                    WHEN ' . sqlId('PROC') . ' LIKE :o5 THEN 6
+                    WHEN ' . sqlId('RECLAMADA') . ' LIKE :o6 THEN 7
+                    ELSE 8
                 END,
                 ' . sqlId('RECLAMANTE') . ' ASC
             LIMIT :limite
@@ -98,12 +217,14 @@ class ProcessoModel
         $stmt->bindValue('o4', $like);
         $stmt->bindValue('o5', $like);
         $stmt->bindValue('o6', $like);
+        $stmt->bindValue('o7', $inicio);
+        $stmt->bindValue('o8', $like);
         $stmt->bindValue('limite', $limite, PDO::PARAM_INT);
         $stmt->execute();
 
         $resultados = [];
         foreach ($stmt->fetchAll() as $row) {
-            $display = $this->textoExibicao($row);
+            $display = $this->textoExibicao($row, $termo);
             $resultados[] = [
                 'id'         => (int) $row['CADASTRO'],
                 'label'      => $this->montarLabel($row),
@@ -111,10 +232,33 @@ class ProcessoModel
                 'reclamante' => $row['RECLAMANTE'] ?? '',
                 'reclamada'  => $row['RECLAMADA'] ?? '',
                 'proc'       => $row['PROC'] ?? '',
+                'cpf'        => $row['CPF'] ?? '',
             ];
         }
 
         return $resultados;
+    }
+
+    /** Monta condições LIKE incluindo busca por CPF (formatado e só números). */
+    private function montarCondicaoBusca(array $condicoes, string $termo, array &$params, string $primeiraChave, string $like, array $extras = []): string
+    {
+        $params[$primeiraChave] = $like;
+        foreach ($extras as $chave => $valor) {
+            $params[$chave] = $valor;
+        }
+
+        $partes = $condicoes;
+        $partes[] = sqlId('CPF') . ' LIKE :cpf_like';
+        $params['cpf_like'] = $like;
+
+        $termoDigits = preg_replace('/\D/', '', $termo);
+        if ($termoDigits !== '' && strlen($termoDigits) >= 3) {
+            $cpfExpr = "REPLACE(REPLACE(REPLACE(" . sqlId('CPF') . ", '.', ''), '-', ''), ' ', '')";
+            $partes[] = $cpfExpr . ' LIKE :cpf_digits';
+            $params['cpf_digits'] = '%' . $termoDigits . '%';
+        }
+
+        return implode(' OR ', $partes);
     }
 
     public function salvar(array $dados): int
@@ -126,16 +270,29 @@ class ProcessoModel
         $campos = self::colunas();
         $valores = [];
         foreach ($campos as $campo) {
-            $valores[$campo] = $dados[$campo] ?? null;
+            $valor = $dados[$campo] ?? null;
+            if (in_array($campo, TelefoneBr::campos(), true)) {
+                $valor = TelefoneBr::normalizar($valor);
+            }
+            if ($campo === 'AREA' && $valor !== null) {
+                $valor = trim((string) $valor) ?: null;
+            }
+            $valores[$campo] = $valor;
         }
 
-        if ($id > 0 && $this->buscarPorId($id)) {
+        if ($id > 0 && $this->registroExiste($id)) {
             $sets = [];
             foreach ($campos as $campo) {
                 if ($campo === 'CADASTRO') {
                     continue;
                 }
+                if (!array_key_exists($campo, $dados)) {
+                    continue;
+                }
                 $sets[] = sqlId($campo) . ' = :' . $campo;
+            }
+            if ($sets === []) {
+                return $id;
             }
             $sql = 'UPDATE ' . $this->tabela . ' SET ' . implode(', ', $sets)
                 . ' WHERE ' . sqlId('CADASTRO') . ' = :CADASTRO';
@@ -272,7 +429,7 @@ class ProcessoModel
 
         $sql = '
             SELECT ' . sqlId('CADASTRO') . ', ' . sqlId('RECLAMANTE') . ', '
-            . sqlId('DATA_NASC') . ', ' . sqlId('FONE_RTE') . ', '
+            . sqlId('DATA_NASC') . ', ' . sqlId('CPF') . ', ' . sqlId('FONE_RTE') . ', '
             . sqlId('FONE_RTE_2_') . ', ' . sqlId('FONE_RTE_3_') . ', ' . sqlId('FONE_RTE_4_') . '
             FROM ' . $this->tabela . '
             WHERE ' . sqlId('RECLAMANTE') . ' IS NOT NULL AND TRIM(' . sqlId('RECLAMANTE') . ") != ''"
@@ -298,10 +455,11 @@ class ProcessoModel
             $lista[] = [
                 'id'        => (int) $row['CADASTRO'],
                 'nome'      => trim($row['RECLAMANTE']),
+                'cpf'       => trim($row['CPF'] ?? '') ?: null,
                 'data_nasc' => $this->formatarValor('DATA_NASC', $row['DATA_NASC']),
                 'idade'     => $idade,
                 'telefone'  => $telefone,
-                'fone_display' => trim($row['FONE_RTE'] ?? '') ?: null,
+                'fone_display' => TelefoneBr::normalizar(trim($row['FONE_RTE'] ?? '')) ?: null,
             ];
         }
 
@@ -349,22 +507,9 @@ class ProcessoModel
     private function extrairTelefoneWhatsApp(array $telefones): ?string
     {
         foreach ($telefones as $tel) {
-            $tel = trim((string) $tel);
-            if ($tel === '' || $tel === '(0 ) - 0') {
-                continue;
-            }
-
-            $digits = preg_replace('/\D/', '', $tel);
-            if (strlen($digits) < 10) {
-                continue;
-            }
-
-            if (strlen($digits) === 10 || strlen($digits) === 11) {
-                $digits = '55' . $digits;
-            }
-
-            if (strlen($digits) >= 12) {
-                return $digits;
+            $whatsapp = TelefoneBr::paraWhatsApp($tel);
+            if ($whatsapp !== null) {
+                return $whatsapp;
             }
         }
 
@@ -375,6 +520,7 @@ class ProcessoModel
     {
         $partes = array_filter([
             $row['RECLAMANTE'] ?? null,
+            !empty(trim((string) ($row['CPF'] ?? ''))) ? 'CPF: ' . trim($row['CPF']) : null,
             $row['PROC'] ?? null,
             $row['RECLAMADA'] ?? null,
         ]);
@@ -383,9 +529,18 @@ class ProcessoModel
     }
 
     /** Texto principal para autocomplete (combo estilo Access). */
-    private function textoExibicao(array $row): string
+    private function textoExibicao(array $row, string $termo = ''): string
     {
-        foreach (['RECLAMANTE', 'PROC', 'RECLAMADA'] as $campo) {
+        $termoDigits = preg_replace('/\D/', '', $termo);
+        if ($termoDigits !== '' && strlen($termoDigits) >= 3) {
+            $cpf = trim((string) ($row['CPF'] ?? ''));
+            $cpfDigits = preg_replace('/\D/', '', $cpf);
+            if ($cpfDigits !== '' && str_contains($cpfDigits, $termoDigits)) {
+                return $cpf;
+            }
+        }
+
+        foreach (['RECLAMANTE', 'PROC', 'RECLAMADA', 'CPF'] as $campo) {
             $valor = trim((string) ($row[$campo] ?? ''));
             if ($valor !== '') {
                 return $valor;
@@ -416,6 +571,10 @@ class ProcessoModel
 
         if (in_array($coluna, ['HORA_AUD', 'PRA_A_HORA'], true)) {
             return $this->formatarHora($valor);
+        }
+
+        if (in_array($coluna, TelefoneBr::campos(), true)) {
+            return TelefoneBr::normalizar((string) $valor);
         }
 
         return (string) $valor;

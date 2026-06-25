@@ -3,23 +3,25 @@
  * Telas de consulta — processo, reclamante ou reclamada.
  */
 
+require_once __DIR__ . '/config/auth.php';
+
 $tipos = [
     'processo' => [
         'titulo'      => 'Consulta por Processo',
         'titulo_form' => 'Consulta por Número de Processo',
-        'label_busca' => 'Consulta por nome reclamante ou reclamada',
+        'label_busca' => 'Consulta por nome, CPF, reclamante ou reclamada',
         'modo'        => 'consulta_processo',
     ],
     'reclamante' => [
         'titulo'      => 'Consulta por Reclamante',
         'titulo_form' => 'Consulta por Nome do Reclamante',
-        'label_busca' => 'Consulta por nome reclamante ou reclamada',
+        'label_busca' => 'Consulta por nome, CPF, reclamante ou reclamada',
         'modo'        => 'consulta_reclamante',
     ],
     'reclamada' => [
         'titulo'      => 'Consulta por Reclamada',
         'titulo_form' => 'Consulta por Nome da Reclamada',
-        'label_busca' => 'Consulta por nome reclamante ou reclamada',
+        'label_busca' => 'Consulta por nome, CPF, reclamante ou reclamada',
         'modo'        => 'consulta_reclamada',
     ],
 ];
@@ -30,6 +32,8 @@ if (!isset($tipos[$tipo])) {
 }
 
 $config = $tipos[$tipo];
+Auth::requerModulo('consulta_' . $tipo, 'ver');
+
 $titulo = $config['titulo'];
 $titulo_form = $config['titulo_form'];
 $label_busca = $config['label_busca'];

@@ -2,6 +2,10 @@
 /**
  * Layout base das páginas internas (formulários e relatórios).
  */
+if (!class_exists('Auth')) {
+    require_once __DIR__ . '/../config/auth.php';
+}
+Auth::requerLogin();
 ?>
 <!DOCTYPE html>
 <html lang="pt-BR">
@@ -27,6 +31,9 @@
     <?php include __DIR__ . '/partials/footer.php'; ?>
 
     <script src="assets/js/app.js?v=2"></script>
+    <script>
+        window.APP_PERMISSOES = <?= json_encode(class_exists('Auth') ? Auth::permissoesJson() : [], JSON_UNESCAPED_UNICODE) ?>;
+    </script>
     <?php if (!empty($script_extra)): ?>
     <script><?= $script_extra ?></script>
     <?php endif; ?>

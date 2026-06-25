@@ -4,6 +4,9 @@
  */
 
 require_once __DIR__ . '/models/ProcessoModel.php';
+require_once __DIR__ . '/config/auth.php';
+
+Auth::requerLogin();
 
 $tipo = $_GET['tipo'] ?? 'audiencias';
 $model = new ProcessoModel();
@@ -20,16 +23,27 @@ if ($dataInicio && $dataFim && $dataInicio > $dataFim) {
 }
 
 $filtroAtivo = ($dataInicio || $dataFim);
+$rotulosColunas = [];
 
-if ($tipo === 'reclamante') {
+if ($tipo === 'pericias') {
+    $params = $_GET;
+    unset($params['tipo']);
+    $qs = http_build_query($params);
+    header('Location: pericias.php' . ($qs ? '?' . $qs : ''));
+    exit;
+} elseif ($tipo === 'reclamante') {
+    Auth::requerModulo('pauta_reclamante', 'ver');
     $titulo = 'Pauta Reclamante';
     $registros = $model->pautaReclamante($dataInicio, $dataFim);
-    $colunas = ['CADASTRO', 'RECLAMANTE', 'RECLAMADA', 'PROC', 'DIA_AUD', 'HORA_AUD', 'ANDAMENTO'];
+    $colunas = ['CADASTRO', 'RECLAMANTE', 'CPF', 'RECLAMADA', 'PROC', 'DIA_AUD', 'HORA_AUD', 'ANDAMENTO'];
+    $filtroDica = 'Informe a data inicial e/ou final para filtrar as audiências do período desejado.';
 } else {
     $tipo = 'audiencias';
+    Auth::requerModulo('pauta_audiencias', 'ver');
     $titulo = 'Pauta de Audiências';
     $registros = $model->pautaAudiencias($dataInicio, $dataFim);
-    $colunas = ['DIA_AUD', 'HORA_AUD', 'RECLAMANTE', 'RECLAMADA', 'PROC', 'JUNTA', 'ANDAMENTO'];
+    $colunas = ['DIA_AUD', 'HORA_AUD', 'RECLAMANTE', 'CPF', 'RECLAMADA', 'PROC', 'JUNTA', 'ANDAMENTO'];
+    $filtroDica = 'Informe a data inicial e/ou final para filtrar as audiências do período desejado.';
 }
 
 $periodoTexto = '';
@@ -85,7 +99,7 @@ if ($dataInicio && $dataFim) {
                     <a href="relatorio.php?tipo=<?= urlencode($tipo) ?>" class="btn-filtro btn-filtro-secondary">Limpar</a>
                 </div>
             </div>
-            <p class="filtro-dica">Informe a data inicial e/ou final para filtrar as audiências do período desejado.</p>
+            <p class="filtro-dica"><?= htmlspecialchars($filtroDica) ?></p>
         </form>
 
         <div class="relatorio-actions no-print">
@@ -97,7 +111,7 @@ if ($dataInicio && $dataFim) {
             <thead>
                 <tr>
                     <?php foreach ($colunas as $col): ?>
-                    <th><?= htmlspecialchars(str_replace('_', ' ', $col)) ?></th>
+                    <th><?= htmlspecialchars($rotulosColunas[$col] ?? str_replace('_', ' ', $col)) ?></th>
                     <?php endforeach; ?>
                 </tr>
             </thead>

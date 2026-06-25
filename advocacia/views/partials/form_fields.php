@@ -5,14 +5,14 @@
 $somente_leitura = $somente_leitura ?? false;
 $readonly = $somente_leitura ? 'readonly' : '';
 $modo = $modo ?? 'cadastro';
-$label_busca = $label_busca ?? 'Consulta por nome reclamante ou reclamada';
+$label_busca = $label_busca ?? 'Consulta por nome, CPF, reclamante ou reclamada';
 ?>
 
 <div class="form-card">
     <div class="form-card-header">
         <h1><?= htmlspecialchars($titulo_form ?? 'Cadastro de Clientes') ?></h1>
         <?php if ($modo === 'cadastro'): ?>
-        <span class="form-badge">Edição</span>
+        <span class="form-badge<?= $somente_leitura ? ' form-badge-readonly' : '' ?>"><?= $somente_leitura ? 'Somente leitura' : 'Edição' ?></span>
         <?php else: ?>
         <span class="form-badge form-badge-readonly">Somente leitura</span>
         <?php endif; ?>
@@ -21,25 +21,40 @@ $label_busca = $label_busca ?? 'Consulta por nome reclamante ou reclamada';
     <div class="form-body" data-modo="<?= htmlspecialchars($modo) ?>" data-readonly="<?= $somente_leitura ? '1' : '0' ?>">
 
         <!-- Busca -->
-        <section class="form-section">
-            <h2 class="section-title">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-                Busca rápida
-            </h2>
-            <div class="form-grid">
-                <?php if ($modo === 'cadastro'): ?>
-                <div class="field-group field-group-sm">
-                    <label for="CADASTRO">Nº Cadastro</label>
-                    <input type="text" id="CADASTRO" name="CADASTRO" readonly>
-                </div>
-                <?php endif; ?>
-                <div class="field-group field-group-full">
-                    <label for="busca"><?= htmlspecialchars($label_busca) ?></label>
-                    <div class="autocomplete-wrapper">
-                        <input type="text" id="busca" autocomplete="off"
-                               placeholder="Digite nome, reclamada ou número do processo...">
-                        <ul id="sugestoes" class="sugestoes-lista"></ul>
+        <section class="form-section form-section-busca">
+            <div class="busca-top-row">
+                <div class="busca-top-campos">
+                    <h2 class="section-title">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                        Busca rápida
+                    </h2>
+                    <div class="form-grid">
+                        <?php if ($modo === 'cadastro'): ?>
+                        <div class="field-group field-group-sm">
+                            <label for="CADASTRO">Nº Cadastro</label>
+                            <input type="text" id="CADASTRO" name="CADASTRO" readonly>
+                        </div>
+                        <?php endif; ?>
+                        <div class="field-group field-group-full">
+                            <label for="busca"><?= htmlspecialchars($label_busca) ?></label>
+                            <div class="autocomplete-wrapper">
+                                <input type="text" id="busca" autocomplete="off"
+                                       placeholder="Digite nome, CPF, reclamada ou número do processo...">
+                                <ul id="sugestoes" class="sugestoes-lista"></ul>
+                            </div>
+                        </div>
                     </div>
+                </div>
+                <div class="foto-reclamante-wrap foto-topo-direita">
+                    <label class="foto-reclamante-label">Foto do reclamante</label>
+                    <button type="button" class="foto-reclamante-box" id="fotoBox" title="Clique para importar ou trocar a foto">
+                        <img id="fotoPreview" class="foto-preview" alt="Foto do reclamante" hidden>
+                        <span class="foto-placeholder" id="fotoPlaceholder">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                            <span>Clique para importar foto</span>
+                        </span>
+                    </button>
+                    <input type="file" id="inputFoto" accept="image/jpeg,image/png,image/webp,image/gif" hidden>
                 </div>
             </div>
         </section>
@@ -55,6 +70,19 @@ $label_busca = $label_busca ?? 'Consulta por nome reclamante ou reclamada';
                     <label for="RECLAMANTE">Nome</label>
                     <input type="text" id="RECLAMANTE" name="RECLAMANTE" <?= $readonly ?>>
                 </div>
+                <div class="field-group">
+                    <label for="CPF">CPF</label>
+                    <input type="text" id="CPF" name="CPF" <?= $readonly ?>>
+                </div>
+                <div class="field-group">
+                    <label for="AREA">Área</label>
+                    <select id="AREA" name="AREA" <?= $somente_leitura ? 'disabled' : '' ?>>
+                        <option value="">Selecione...</option>
+                        <option value="trabalhista">Trabalhista</option>
+                        <option value="previdenciario">Previdenciário</option>
+                        <option value="consumidor">Consumidor</option>
+                    </select>
+                </div>
                 <?php if ($modo === 'cadastro'): ?>
                 <div class="field-group">
                     <label for="DATA_NASC">Data de nascimento</label>
@@ -67,10 +95,6 @@ $label_busca = $label_busca ?? 'Consulta por nome reclamante ou reclamada';
                 <div class="field-group">
                     <label for="IDENTIDADE">Identidade</label>
                     <input type="text" id="IDENTIDADE" name="IDENTIDADE" <?= $readonly ?>>
-                </div>
-                <div class="field-group">
-                    <label for="CPF">CPF</label>
-                    <input type="text" id="CPF" name="CPF" <?= $readonly ?>>
                 </div>
                 <?php endif; ?>
                 <div class="field-group field-group-full">
@@ -158,16 +182,16 @@ $label_busca = $label_busca ?? 'Consulta por nome reclamante ou reclamada';
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
                 Dados do processo
             </h2>
-            <div class="form-grid">
+            <div class="form-grid form-grid-processo">
                 <div class="field-group field-group-sm">
                     <label for="JUNTA">Junta</label>
                     <input type="text" id="JUNTA" name="JUNTA" <?= $readonly ?>>
                 </div>
-                <div class="field-group field-group-lg">
+                <div class="field-group">
                     <label for="PROC">Nº Processo</label>
                     <input type="text" id="PROC" name="PROC" <?= $readonly ?>>
                 </div>
-                <div class="field-group">
+                <div class="field-group field-group-data">
                     <label for="DIA_AUD">Data audiência</label>
                     <input type="text" id="DIA_AUD" name="DIA_AUD" <?= $readonly ?>>
                 </div>
@@ -175,21 +199,11 @@ $label_busca = $label_busca ?? 'Consulta por nome reclamante ou reclamada';
                     <label for="HORA_AUD">Hora</label>
                     <input type="text" id="HORA_AUD" name="HORA_AUD" <?= $readonly ?>>
                 </div>
-                <?php if ($modo === 'cadastro'): ?>
-                <div class="field-group">
-                    <label for="PRA_A_DIA">Praça — Data</label>
-                    <input type="text" id="PRA_A_DIA" name="PRA_A_DIA" <?= $readonly ?>>
-                </div>
-                <div class="field-group field-group-sm">
-                    <label for="PRA_A_HORA">Praça — Hora</label>
-                    <input type="text" id="PRA_A_HORA" name="PRA_A_HORA" <?= $readonly ?>>
-                </div>
-                <?php endif; ?>
             </div>
         </section>
 
         <!-- Andamento -->
-        <section class="form-section">
+        <section class="form-section form-section-andamento">
             <h2 class="section-title">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="17" y1="10" x2="3" y2="10"/><line x1="21" y1="6" x2="3" y2="6"/><line x1="21" y1="14" x2="3" y2="14"/><line x1="17" y1="18" x2="3" y2="18"/></svg>
                 Andamento
@@ -200,9 +214,27 @@ $label_busca = $label_busca ?? 'Consulta por nome reclamante ou reclamada';
             </div>
         </section>
 
+        <!-- Documento importado -->
+        <section class="form-section documento-section" id="documentoPanel" hidden>
+            <h2 class="section-title">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                Documento importado
+            </h2>
+            <div class="documento-anexo-panel">
+                <div class="documento-anexo-info">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                    <div>
+                        <strong>Arquivo anexado</strong>
+                        <span id="documentoNome">—</span>
+                    </div>
+                </div>
+                <a href="#" id="linkDocumento" class="btn-documento-link" target="_blank" rel="noopener">Abrir documento</a>
+            </div>
+        </section>
+
         <!-- Ações -->
         <div class="form-actions-bar">
-            <?php if ($modo === 'cadastro'): ?>
+            <?php if ($modo === 'cadastro' && !$somente_leitura): ?>
             <button type="button" id="btnSalvar" class="btn btn-primary">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
                 Salvar
@@ -211,6 +243,11 @@ $label_busca = $label_busca ?? 'Consulta por nome reclamante ou reclamada';
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
                 Novo registro
             </button>
+            <button type="button" id="btnImporta" class="btn btn-secondary">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                Importa
+            </button>
+            <input type="file" id="inputDocumento" accept="application/pdf,image/jpeg,image/png,image/webp,image/gif" hidden>
             <?php endif; ?>
             <a href="index.php" class="btn btn-outline">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
