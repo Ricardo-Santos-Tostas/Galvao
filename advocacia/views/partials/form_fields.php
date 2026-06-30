@@ -59,6 +59,7 @@ $label_busca = $label_busca ?? 'Consulta por nome, CPF, reclamante ou reclamada'
                         <button type="button" class="btn-foto-acao" id="btnFotoImportar">Importar</button>
                         <button type="button" class="btn-foto-acao btn-foto-webcam" id="btnFotoWebcam">Tirar foto</button>
                     </div>
+                    <p class="foto-webcam-dica">Webcam: use <strong>localhost</strong> neste PC (não o IP da rede).</p>
                     <input type="file" id="inputFoto" accept="image/jpeg,image/png,image/webp,image/gif" hidden>
                     <?php endif; ?>
                 </div>

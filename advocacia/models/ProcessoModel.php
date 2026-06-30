@@ -306,6 +306,7 @@ class ProcessoModel
 
         if ($id > 0 && $this->registroExiste($id)) {
             $sets = [];
+            $params = ['CADASTRO' => $id];
             foreach ($campos as $campo) {
                 if ($campo === 'CADASTRO') {
                     continue;
@@ -314,6 +315,7 @@ class ProcessoModel
                     continue;
                 }
                 $sets[] = sqlId($campo) . ' = :' . $campo;
+                $params[$campo] = $valores[$campo];
             }
             if ($sets === []) {
                 return $id;
@@ -321,11 +323,11 @@ class ProcessoModel
             $sql = 'UPDATE ' . $this->tabela . ' SET ' . implode(', ', $sets)
                 . ' WHERE ' . sqlId('CADASTRO') . ' = :CADASTRO';
             $stmt = $this->db->prepare($sql);
-            $stmt->execute($valores);
+            $stmt->execute($params);
             return $id;
         }
 
-        $novoId = $this->proximoId();
+        $novoId = ($id > 0 && !$this->registroExiste($id)) ? $id : $this->proximoId();
         $valores['CADASTRO'] = $novoId;
 
         $cols = implode(', ', array_map('sqlId', $campos));

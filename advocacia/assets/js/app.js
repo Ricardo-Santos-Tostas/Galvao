@@ -198,6 +198,33 @@ const App = (() => {
 
 
 
+    function urlAcessoLocalhost() {
+        const porta = window.location.port ? ':' + window.location.port : '';
+        return window.location.protocol + '//localhost' + porta + window.location.pathname;
+    }
+
+
+
+    function obterGetUserMedia() {
+        if (navigator.mediaDevices?.getUserMedia) {
+            return navigator.mediaDevices.getUserMedia.bind(navigator.mediaDevices);
+        }
+
+        const legado = navigator.getUserMedia
+            || navigator.webkitGetUserMedia
+            || navigator.mozGetUserMedia;
+
+        if (!legado) {
+            return null;
+        }
+
+        return (constraints) => new Promise((resolve, reject) => {
+            legado.call(navigator, constraints, resolve, reject);
+        });
+    }
+
+
+
     async function abrirWebcam() {
 
         const modal = document.getElementById('modalWebcam');
@@ -208,19 +235,28 @@ const App = (() => {
 
 
 
-        if (!navigator.mediaDevices?.getUserMedia) {
-
-            alert('Seu navegador não suporta webcam. Use o botão Importar.');
-
+        if (!window.isSecureContext) {
+            const host = window.location.hostname;
+            const urlLocal = urlAcessoLocalhost();
+            alert(
+                'A webcam não funciona pelo endereço ' + host + ' (rede local sem HTTPS).\n\n'
+                + 'Neste computador, use:\n' + urlLocal + '\n\n'
+                + 'Ou clique em Importar para escolher uma foto do computador.'
+            );
             return;
+        }
 
+        const getUserMedia = obterGetUserMedia();
+        if (!getUserMedia) {
+            alert('Seu navegador não suporta webcam. Use o botão Importar.');
+            return;
         }
 
 
 
         try {
 
-            webcamStream = await navigator.mediaDevices.getUserMedia({
+            webcamStream = await getUserMedia({
 
                 video: { facingMode: 'user', width: { ideal: 640 }, height: { ideal: 480 } },
 
@@ -236,7 +272,11 @@ const App = (() => {
 
             console.error(err);
 
-            alert('Não foi possível acessar a webcam. Verifique se a câmera está conectada e permitida no navegador.');
+            if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
+                alert('Permissão da câmera negada. Clique no ícone de cadeado/câmera na barra do navegador e permita o acesso.');
+            } else {
+                alert('Não foi possível acessar a webcam. Verifique se a câmera está conectada e permitida no navegador.');
+            }
 
         }
 
