@@ -101,6 +101,12 @@ class ApiController
 
                     break;
 
+                case 'excluir_documento':
+
+                    $this->excluirDocumento();
+
+                    break;
+
                 case 'pericia':
 
                     $this->pericia();
@@ -548,6 +554,49 @@ class ApiController
 
             'registro' => $this->model->buscarPorId($id),
 
+        ]);
+
+    }
+
+
+
+    private function excluirDocumento(): void
+
+    {
+
+        if (!Auth::podeEditar('cadastro')) {
+            $this->responder(['erro' => 'Sem permissão para editar cadastros'], 403);
+        }
+
+        $dados = json_decode(file_get_contents('php://input'), true);
+        if (!is_array($dados)) {
+            $dados = $_POST;
+        }
+
+        $id = (int) ($dados['id'] ?? 0);
+        if ($id <= 0) {
+            $this->responder(['erro' => 'Cadastro inválido'], 400);
+        }
+
+        $doc = $this->model->obterDocumento($id);
+        if ($doc === null) {
+            $this->responder(['erro' => 'Este cadastro não possui documento anexado'], 400);
+        }
+
+        $nome = $doc['nome'] ?? 'documento';
+        $this->model->excluirDocumento($id);
+
+        Log::registrar(
+            'cadastro_documento_excluir',
+            'Excluiu documento do cadastro #' . $id . ' — ' . $nome,
+            'cadastro',
+            '#' . $id,
+            ['arquivo' => $nome]
+        );
+
+        $this->responder([
+            'sucesso'  => true,
+            'registro' => $this->model->buscarPorId($id),
         ]);
 
     }

@@ -124,6 +124,9 @@ const App = (() => {
 
             document.getElementById('inputDocumento')?.addEventListener('change', onDocumentoSelecionado);
 
+            document.getElementById('btnExcluirDocumento')?.addEventListener('click', excluirDocumento);
+            document.getElementById('btnExcluirDocumentoPainel')?.addEventListener('click', excluirDocumento);
+
             initModalDuplicado();
 
         }
@@ -886,13 +889,19 @@ const App = (() => {
 
         const link = document.getElementById('linkDocumento');
 
+        const btnExcluir = document.getElementById('btnExcluirDocumento');
+
+        const btnExcluirPainel = document.getElementById('btnExcluirDocumentoPainel');
+
 
 
         if (!panel || !nomeEl || !link) return;
 
 
 
-        if (registro.tem_documento && registro.documento_url) {
+        const temDoc = !!(registro.tem_documento && registro.documento_url);
+
+        if (temDoc) {
 
             panel.hidden = false;
 
@@ -907,6 +916,80 @@ const App = (() => {
             nomeEl.textContent = '—';
 
             link.href = '#';
+
+        }
+
+        if (btnExcluir) {
+            btnExcluir.hidden = !temDoc || somenteLeitura;
+        }
+
+        if (btnExcluirPainel) {
+            btnExcluirPainel.hidden = !temDoc || somenteLeitura;
+        }
+
+    }
+
+
+
+    async function excluirDocumento() {
+
+        const id = obterIdCadastro();
+
+        if (!id) {
+
+            alert('Abra ou salve um cadastro antes de excluir o documento.');
+
+            return;
+
+        }
+
+        const nome = document.getElementById('documentoNome')?.textContent?.trim() || 'documento';
+
+        if (!confirm('Excluir o documento "' + nome + '" deste cadastro?\n\nEsta ação não pode ser desfeita.')) {
+
+            return;
+
+        }
+
+        try {
+
+            const resp = await fetch(`${API_BASE}?acao=excluir_documento`, {
+
+                method: 'POST',
+
+                headers: { 'Content-Type': 'application/json' },
+
+                body: JSON.stringify({ id })
+
+            });
+
+            const data = await resp.json();
+
+            if (!data.sucesso) {
+
+                alert('Erro ao excluir documento: ' + (data.erro || 'Erro desconhecido'));
+
+                return;
+
+            }
+
+            if (data.registro) {
+
+                preencherFormulario(data.registro);
+
+            } else {
+
+                atualizarDocumento({ tem_documento: false });
+
+            }
+
+            alert('Documento excluído com sucesso.');
+
+        } catch (err) {
+
+            alert('Erro ao excluir documento.');
+
+            console.error(err);
 
         }
 

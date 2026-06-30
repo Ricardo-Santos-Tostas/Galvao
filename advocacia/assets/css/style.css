@@ -1285,6 +1285,39 @@ body {
     background: #1e3a5f;
 }
 
+.btn-documento-excluir {
+    flex-shrink: 0;
+    padding: 8px 14px;
+    border: 1.5px solid #b91c1c;
+    background: #fff;
+    color: #b91c1c;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: var(--transition);
+}
+
+.btn-documento-excluir:hover {
+    background: #fef2f2;
+}
+
+.btn-excluir-doc[hidden],
+.btn-documento-excluir[hidden] {
+    display: none !important;
+}
+
+.btn-excluir-doc {
+    border-color: #b91c1c;
+    color: #b91c1c;
+}
+
+.btn-excluir-doc:hover {
+    background: #fef2f2;
+    border-color: #991b1b;
+    color: #991b1b;
+}
+
 .field-group select {
     width: 100%;
     padding: 10px 12px;

@@ -70,6 +70,7 @@ function badgeAcao(string $acao): string
         'cadastro_editar'    => 'log-badge-editar',
         'cadastro_foto'      => 'log-badge-anexo',
         'cadastro_documento' => 'log-badge-anexo',
+        'cadastro_documento_excluir' => 'log-badge-excluir',
         'pericia_criar'      => 'log-badge-criar',
         'pericia_editar'     => 'log-badge-editar',
         'usuario_criar'      => 'log-badge-criar',
