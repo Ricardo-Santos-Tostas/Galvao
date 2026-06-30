@@ -878,6 +878,9 @@ body {
 .foto-reclamante-wrap {
     flex-shrink: 0;
     width: 130px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
 }
 
 @media (max-width: 768px) {
@@ -889,23 +892,24 @@ body {
 
 .foto-reclamante-label {
     display: block;
+    width: 100%;
     font-size: 11px;
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.4px;
     color: var(--text-muted);
     margin-bottom: 8px;
+    text-align: center;
 }
 
 .foto-reclamante-box {
+    position: relative;
     width: 130px;
     height: 155px;
     border: 2px dashed var(--border);
     border-radius: 12px;
     background: #f8fafc;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    display: block;
     overflow: hidden;
     cursor: pointer;
     padding: 0;
@@ -918,21 +922,36 @@ body {
 }
 
 .foto-preview {
+    position: absolute;
+    inset: 0;
     width: 100%;
     height: 100%;
     object-fit: cover;
+    object-position: center center;
+    display: block;
+}
+
+.foto-preview[hidden] {
+    display: none !important;
 }
 
 .foto-placeholder {
+    position: absolute;
+    inset: 0;
     display: flex;
     flex-direction: column;
     align-items: center;
+    justify-content: center;
     gap: 8px;
     padding: 12px;
     text-align: center;
     font-size: 11px;
     color: var(--text-muted);
     line-height: 1.3;
+}
+
+.foto-placeholder[hidden] {
+    display: none !important;
 }
 
 .foto-placeholder svg {
@@ -946,6 +965,7 @@ body {
     flex-direction: column;
     gap: 6px;
     margin-top: 8px;
+    width: 130px;
 }
 
 .btn-foto-acao {
