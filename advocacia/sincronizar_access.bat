@@ -45,14 +45,15 @@ if errorlevel 1 (
 echo.
 echo PASSO 2 - Escolha a origem dos dados do Access:
 echo.
-echo   [1] Arquivo CSV  (recomendado - exportar do Access)
+echo   [1] Arquivo CSV  (exportar do Access)
 echo   [2] Arquivo SQLite (sistema.db)
-echo   [3] Sair
+echo   [3] Planilha Excel (.xlsx) - recomendado
+echo   [4] Sair
 echo.
-set /p OPCAO="Opcao (1/2/3): "
+set /p OPCAO="Opcao (1/2/3/4): "
 
-if "%OPCAO%"=="3" exit /b 0
-if not "%OPCAO%"=="1" if not "%OPCAO%"=="2" (
+if "%OPCAO%"=="4" exit /b 0
+if not "%OPCAO%"=="1" if not "%OPCAO%"=="2" if not "%OPCAO%"=="3" (
     echo Opcao invalida.
     pause
     exit /b 1
@@ -83,6 +84,37 @@ if "%OPCAO%"=="2" (
     echo.
     set /p ARQUIVO="Caminho do sistema.db (Enter = ..\sistema.db): "
     if "!ARQUIVO!"=="" set "ARQUIVO=..\sistema.db"
+)
+
+if "%OPCAO%"=="3" (
+    set "FONTE=csv"
+    echo.
+    set /p ARQUIVO="Caminho do arquivo .xlsx: "
+    if "!ARQUIVO!"=="" (
+        echo [ERRO] Informe o caminho da planilha Excel.
+        pause
+        exit /b 1
+    )
+    if not exist "!ARQUIVO!" (
+        echo [ERRO] Arquivo nao encontrado: !ARQUIVO!
+        pause
+        exit /b 1
+    )
+    echo.
+    echo Convertendo Excel para CSV...
+    python --version >nul 2>&1
+    if errorlevel 1 (
+        echo [ERRO] Python nao encontrado. Instale Python 3 ou exporte CSV manualmente.
+        pause
+        exit /b 1
+    )
+    python scripts\converter_xlsx.py "!ARQUIVO!" import\planilha_access.csv
+    if errorlevel 1 (
+        echo [ERRO] Falha ao converter a planilha.
+        pause
+        exit /b 1
+    )
+    set "ARQUIVO=import\planilha_access.csv"
 )
 
 if not exist "!ARQUIVO!" (
