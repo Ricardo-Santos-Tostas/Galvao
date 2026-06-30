@@ -6,15 +6,9 @@ echo ============================================
 echo  IMPORTAR BACKUP ATUALIZADO DO GIT
 echo ============================================
 echo.
-echo ATENCAO: Isso SUBSTITUI todo o banco advocacia
-echo pelos dados do arquivo sql\backup_advocacia.sql
-echo (versao sincronizada com o Access).
-echo.
-echo Fotos e documentos gravados APENAS no MySQL local
-echo serao perdidos se nao estiverem no backup.
-echo.
-echo Prefere mesclar sem apagar anexos? Use:
-echo   sincronizar_access.bat com a planilha .xlsx
+echo ATENCAO: O baixar_atualizacao_cliente.bat ja importa
+echo o backup automaticamente. Use este script apenas
+echo se quiser importar de novo sem baixar do GitHub.
 echo.
 set /p CONF="Continuar com importacao completa? (S/N): "
 if /i not "!CONF!"=="S" (
