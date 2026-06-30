@@ -8,3 +8,6 @@ __pycache__/
 Thumbs.db
 *.log
 LEIA-ME-TRANSFERENCIA.txt
+
+# Gerado localmente na sincronizacao Access
+advocacia/import/planilha_access.csv

@@ -100,3 +100,9 @@ Write-Host " ATUALIZACAO CONCLUIDA" -ForegroundColor Green
 Write-Host "============================================" -ForegroundColor Green
 Write-Host "Acesse: http://localhost/advocacia"
 Write-Host ""
+Write-Host "Banco de dados (dados do Access):" -ForegroundColor Yellow
+Write-Host "  Opcao A - Mesclar planilha (preserva fotos/PDFs locais):"
+Write-Host "    sincronizar_access.bat + planilha .xlsx"
+Write-Host "  Opcao B - Importar backup completo do Git:"
+Write-Host "    importar_backup_atualizado.bat"
+Write-Host ""
