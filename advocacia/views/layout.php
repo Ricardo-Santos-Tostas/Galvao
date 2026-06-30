@@ -30,7 +30,7 @@ Auth::requerLogin();
 
     <?php include __DIR__ . '/partials/footer.php'; ?>
 
-    <script src="assets/js/app.js?v=2"></script>
+    <script src="assets/js/app.js?v=3"></script>
     <script>
         window.APP_PERMISSOES = <?= json_encode(class_exists('Auth') ? Auth::permissoesJson() : [], JSON_UNESCAPED_UNICODE) ?>;
     </script>

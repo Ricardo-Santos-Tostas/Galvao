@@ -136,15 +136,27 @@ const App = (() => {
 
         const inputFoto = document.getElementById('inputFoto');
 
+        const btnFotoImportar = document.getElementById('btnFotoImportar');
+
+        const btnFotoWebcam = document.getElementById('btnFotoWebcam');
 
 
-        if (fotoBox && !somenteLeitura) {
 
-            fotoBox.addEventListener('click', () => inputFoto?.click());
+        if (!somenteLeitura) {
+
+            btnFotoImportar?.addEventListener('click', () => inputFoto?.click());
 
             inputFoto?.addEventListener('change', onFotoSelecionada);
 
-        } else if (fotoBox && somenteLeitura) {
+            btnFotoWebcam?.addEventListener('click', abrirWebcam);
+
+            initWebcamModal();
+
+        }
+
+
+
+        if (fotoBox) {
 
             fotoBox.addEventListener('click', () => {
 
@@ -159,6 +171,250 @@ const App = (() => {
             });
 
             fotoBox.style.cursor = 'zoom-in';
+
+            fotoBox.title = 'Clique para ampliar a foto';
+
+        }
+
+    }
+
+
+
+    let webcamStream = null;
+
+
+
+    function initWebcamModal() {
+
+        document.getElementById('btnFecharWebcam')?.addEventListener('click', fecharWebcam);
+
+        document.getElementById('btnCancelarWebcam')?.addEventListener('click', fecharWebcam);
+
+        document.getElementById('modalWebcamBackdrop')?.addEventListener('click', fecharWebcam);
+
+        document.getElementById('btnCapturarWebcam')?.addEventListener('click', capturarWebcam);
+
+    }
+
+
+
+    async function abrirWebcam() {
+
+        const modal = document.getElementById('modalWebcam');
+
+        const video = document.getElementById('webcamVideo');
+
+        if (!modal || !video) return;
+
+
+
+        if (!navigator.mediaDevices?.getUserMedia) {
+
+            alert('Seu navegador não suporta webcam. Use o botão Importar.');
+
+            return;
+
+        }
+
+
+
+        try {
+
+            webcamStream = await navigator.mediaDevices.getUserMedia({
+
+                video: { facingMode: 'user', width: { ideal: 640 }, height: { ideal: 480 } },
+
+                audio: false
+
+            });
+
+            video.srcObject = webcamStream;
+
+            modal.hidden = false;
+
+        } catch (err) {
+
+            console.error(err);
+
+            alert('Não foi possível acessar a webcam. Verifique se a câmera está conectada e permitida no navegador.');
+
+        }
+
+    }
+
+
+
+    function fecharWebcam() {
+
+        const modal = document.getElementById('modalWebcam');
+
+        const video = document.getElementById('webcamVideo');
+
+
+
+        if (webcamStream) {
+
+            webcamStream.getTracks().forEach(track => track.stop());
+
+            webcamStream = null;
+
+        }
+
+
+
+        if (video) {
+
+            video.srcObject = null;
+
+        }
+
+
+
+        if (modal) {
+
+            modal.hidden = true;
+
+        }
+
+    }
+
+
+
+    async function capturarWebcam() {
+
+        const video = document.getElementById('webcamVideo');
+
+        const canvas = document.getElementById('webcamCanvas');
+
+        const btn = document.getElementById('btnCapturarWebcam');
+
+
+
+        if (!video || !canvas || video.videoWidth === 0) {
+
+            alert('Aguarde a câmera carregar.');
+
+            return;
+
+        }
+
+
+
+        canvas.width = video.videoWidth;
+
+        canvas.height = video.videoHeight;
+
+        const ctx = canvas.getContext('2d');
+
+        ctx.drawImage(video, 0, 0);
+
+
+
+        if (btn) btn.disabled = true;
+
+
+
+        try {
+
+            const blob = await new Promise((resolve, reject) => {
+
+                canvas.toBlob(b => (b ? resolve(b) : reject(new Error('Falha ao capturar'))), 'image/jpeg', 0.9);
+
+            });
+
+            const file = new File([blob], 'webcam.jpg', { type: 'image/jpeg' });
+
+            fecharWebcam();
+
+            await enviarFotoArquivo(file);
+
+        } catch (err) {
+
+            alert(err.message || 'Erro ao capturar foto.');
+
+            console.error(err);
+
+        } finally {
+
+            if (btn) btn.disabled = false;
+
+        }
+
+    }
+
+
+
+    async function enviarFotoArquivo(file) {
+
+        if (!file.type.startsWith('image/')) {
+
+            alert('Selecione uma imagem (JPG, PNG, etc.).');
+
+            return;
+
+        }
+
+
+
+        const id = await garantirCadastroSalvo();
+
+        const formData = new FormData();
+
+        formData.append('acao', 'upload_foto');
+
+        formData.append('id', id);
+
+        formData.append('arquivo', file);
+
+
+
+        const resp = await fetch(API_BASE, { method: 'POST', body: formData });
+
+        const data = await resp.json();
+
+
+
+        if (!data.sucesso) {
+
+            throw new Error(data.erro || 'Erro desconhecido');
+
+        }
+
+
+
+        if (data.registro) {
+
+            preencherFormulario(data.registro);
+
+        }
+
+        alert('Foto salva com sucesso!');
+
+    }
+
+
+
+    async function onFotoSelecionada(e) {
+
+        const file = e.target.files?.[0];
+
+        if (!file) return;
+
+
+
+        try {
+
+            await enviarFotoArquivo(file);
+
+        } catch (err) {
+
+            alert(err.message || 'Erro ao importar foto.');
+
+            console.error(err);
+
+        } finally {
+
+            e.target.value = '';
 
         }
 
@@ -237,80 +493,6 @@ const App = (() => {
 
 
         return data.id;
-
-    }
-
-
-
-    async function onFotoSelecionada(e) {
-
-        const file = e.target.files?.[0];
-
-        if (!file) return;
-
-
-
-        if (!file.type.startsWith('image/')) {
-
-            alert('Selecione uma imagem (JPG, PNG, etc.).');
-
-            e.target.value = '';
-
-            return;
-
-        }
-
-
-
-        try {
-
-            const id = await garantirCadastroSalvo();
-
-            const formData = new FormData();
-
-            formData.append('acao', 'upload_foto');
-
-            formData.append('id', id);
-
-            formData.append('arquivo', file);
-
-
-
-            const resp = await fetch(API_BASE, { method: 'POST', body: formData });
-
-            const data = await resp.json();
-
-
-
-            if (!data.sucesso) {
-
-                alert('Erro ao salvar foto: ' + (data.erro || 'Erro desconhecido'));
-
-                return;
-
-            }
-
-
-
-            if (data.registro) {
-
-                preencherFormulario(data.registro);
-
-            }
-
-            alert('Foto salva com sucesso!');
-
-        } catch (err) {
-
-            alert(err.message || 'Erro ao importar foto.');
-
-            console.error(err);
-
-        } finally {
-
-            e.target.value = '';
-
-        }
 
     }
 

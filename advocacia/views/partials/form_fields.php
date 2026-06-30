@@ -47,14 +47,20 @@ $label_busca = $label_busca ?? 'Consulta por nome, CPF, reclamante ou reclamada'
                 </div>
                 <div class="foto-reclamante-wrap foto-topo-direita">
                     <label class="foto-reclamante-label">Foto do reclamante</label>
-                    <button type="button" class="foto-reclamante-box" id="fotoBox" title="Clique para importar ou trocar a foto">
+                    <button type="button" class="foto-reclamante-box" id="fotoBox" title="Visualizar foto">
                         <img id="fotoPreview" class="foto-preview" alt="Foto do reclamante" hidden>
                         <span class="foto-placeholder" id="fotoPlaceholder">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-                            <span>Clique para importar foto</span>
+                            <span>Sem foto</span>
                         </span>
                     </button>
+                    <?php if ($modo === 'cadastro' && !$somente_leitura): ?>
+                    <div class="foto-acoes">
+                        <button type="button" class="btn-foto-acao" id="btnFotoImportar">Importar</button>
+                        <button type="button" class="btn-foto-acao btn-foto-webcam" id="btnFotoWebcam">Tirar foto</button>
+                    </div>
                     <input type="file" id="inputFoto" accept="image/jpeg,image/png,image/webp,image/gif" hidden>
+                    <?php endif; ?>
                 </div>
             </div>
         </section>
@@ -284,4 +290,25 @@ $label_busca = $label_busca ?? 'Consulta por nome, CPF, reclamante ou reclamada'
             </a>
         </div>
     </div>
+
+    <?php if ($modo === 'cadastro' && !$somente_leitura): ?>
+    <div class="modal-webcam" id="modalWebcam" hidden>
+        <div class="modal-webcam-backdrop" id="modalWebcamBackdrop"></div>
+        <div class="modal-webcam-panel" role="dialog" aria-labelledby="modalWebcamTitulo">
+            <header class="modal-webcam-header">
+                <h2 id="modalWebcamTitulo">Tirar foto do reclamante</h2>
+                <button type="button" class="modal-webcam-fechar" id="btnFecharWebcam" aria-label="Fechar">&times;</button>
+            </header>
+            <div class="modal-webcam-corpo">
+                <video id="webcamVideo" class="webcam-video" autoplay playsinline muted></video>
+                <canvas id="webcamCanvas" hidden></canvas>
+                <p class="webcam-dica">Posicione o rosto na câmera e clique em Capturar.</p>
+            </div>
+            <div class="modal-webcam-acoes">
+                <button type="button" class="btn-filtro btn-filtro-secondary" id="btnCancelarWebcam">Cancelar</button>
+                <button type="button" class="btn-filtro btn-filtro-primary" id="btnCapturarWebcam">Capturar e salvar</button>
+            </div>
+        </div>
+    </div>
+    <?php endif; ?>
 </div>

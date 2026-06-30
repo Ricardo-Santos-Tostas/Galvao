@@ -880,6 +880,13 @@ body {
     width: 130px;
 }
 
+@media (max-width: 768px) {
+    .foto-reclamante-wrap {
+        width: 100%;
+        max-width: 160px;
+    }
+}
+
 .foto-reclamante-label {
     display: block;
     font-size: 11px;
@@ -932,6 +939,124 @@ body {
     width: 36px;
     height: 36px;
     color: #94a3b8;
+}
+
+.foto-acoes {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-top: 8px;
+}
+
+.btn-foto-acao {
+    width: 100%;
+    padding: 6px 8px;
+    font-size: 11px;
+    font-weight: 600;
+    border-radius: 6px;
+    border: 1.5px solid var(--border);
+    background: var(--white);
+    color: var(--navy);
+    cursor: pointer;
+    transition: var(--transition);
+}
+
+.btn-foto-acao:hover {
+    border-color: var(--navy);
+    background: #f8fafc;
+}
+
+.btn-foto-webcam {
+    background: var(--navy);
+    color: var(--white);
+    border-color: var(--navy);
+}
+
+.btn-foto-webcam:hover {
+    background: var(--navy-light);
+    border-color: var(--navy-light);
+}
+
+.modal-webcam[hidden] { display: none !important; }
+
+.modal-webcam {
+    position: fixed;
+    inset: 0;
+    z-index: 600;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+}
+
+.modal-webcam-backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(15, 28, 46, 0.55);
+}
+
+.modal-webcam-panel {
+    position: relative;
+    width: 100%;
+    max-width: 480px;
+    background: var(--white);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    box-shadow: var(--shadow-lg);
+}
+
+.modal-webcam-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 20px;
+    background: linear-gradient(135deg, var(--navy-dark) 0%, var(--navy) 100%);
+    color: var(--white);
+}
+
+.modal-webcam-header h2 {
+    font-size: 16px;
+    font-weight: 600;
+}
+
+.modal-webcam-fechar {
+    background: none;
+    border: none;
+    color: var(--white);
+    font-size: 24px;
+    line-height: 1;
+    cursor: pointer;
+    opacity: 0.85;
+}
+
+.modal-webcam-fechar:hover { opacity: 1; }
+
+.modal-webcam-corpo {
+    padding: 16px 20px;
+}
+
+.webcam-video {
+    display: block;
+    width: 100%;
+    max-height: 360px;
+    background: #000;
+    border-radius: 8px;
+    object-fit: cover;
+}
+
+.webcam-dica {
+    margin-top: 10px;
+    font-size: 12px;
+    color: var(--text-muted);
+    text-align: center;
+}
+
+.modal-webcam-acoes {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    padding: 16px 20px;
+    border-top: 1px solid var(--border);
 }
 
 .reclamante-campos {
