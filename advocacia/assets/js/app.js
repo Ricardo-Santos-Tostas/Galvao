@@ -920,11 +920,14 @@ const App = (() => {
         }
 
         if (btnExcluir) {
-            btnExcluir.hidden = !temDoc || somenteLeitura;
+            btnExcluir.disabled = !temDoc || somenteLeitura;
+            btnExcluir.title = temDoc
+                ? 'Remover o documento anexado deste cadastro'
+                : 'Nenhum documento anexado neste cadastro';
         }
 
         if (btnExcluirPainel) {
-            btnExcluirPainel.hidden = !temDoc || somenteLeitura;
+            btnExcluirPainel.disabled = !temDoc || somenteLeitura;
         }
 
     }

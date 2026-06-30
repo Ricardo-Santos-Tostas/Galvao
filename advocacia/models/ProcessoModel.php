@@ -572,12 +572,13 @@ class ProcessoModel
         $lista = [];
         foreach ($stmt->fetchAll() as $row) {
             $idade = $this->calcularIdade($row['DATA_NASC']);
-            $telefone = $this->extrairTelefoneWhatsApp([
+            $telefones = [
                 $row['FONE_RTE'] ?? '',
                 $row['FONE_RTE_2_'] ?? '',
                 $row['FONE_RTE_3_'] ?? '',
                 $row['FONE_RTE_4_'] ?? '',
-            ]);
+            ];
+            $telefone = $this->extrairTelefoneWhatsApp($telefones);
 
             $lista[] = [
                 'id'        => (int) $row['CADASTRO'],
@@ -586,7 +587,7 @@ class ProcessoModel
                 'data_nasc' => $this->formatarValor('DATA_NASC', $row['DATA_NASC']),
                 'idade'     => $idade,
                 'telefone'  => $telefone,
-                'fone_display' => TelefoneBr::normalizar(trim($row['FONE_RTE'] ?? '')) ?: null,
+                'fone_display' => TelefoneBr::primeiroFormatado($telefones),
             ];
         }
 

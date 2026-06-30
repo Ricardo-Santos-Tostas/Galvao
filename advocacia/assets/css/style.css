@@ -1312,10 +1312,19 @@ body {
     color: #b91c1c;
 }
 
-.btn-excluir-doc:hover {
+.btn-excluir-doc:hover:not(:disabled) {
     background: #fef2f2;
     border-color: #991b1b;
     color: #991b1b;
+}
+
+.btn-excluir-doc:disabled,
+.btn-documento-excluir:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+    border-color: var(--border);
+    color: var(--text-muted);
+    background: #f8fafc;
 }
 
 .field-group select {

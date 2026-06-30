@@ -16,7 +16,7 @@ Auth::requerLogin();
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Playfair+Display:wght@500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="assets/css/style.css?v=4">
+    <link rel="stylesheet" href="assets/css/style.css?v=5">
     <link rel="icon" href="assets/img/logo.png" type="image/png">
 </head>
 <body class="page-form">
@@ -30,7 +30,7 @@ Auth::requerLogin();
 
     <?php include __DIR__ . '/partials/footer.php'; ?>
 
-    <script src="assets/js/app.js?v=6"></script>
+    <script src="assets/js/app.js?v=7"></script>
     <script>
         window.APP_PERMISSOES = <?= json_encode(class_exists('Auth') ? Auth::permissoesJson() : [], JSON_UNESCAPED_UNICODE) ?>;
     </script>

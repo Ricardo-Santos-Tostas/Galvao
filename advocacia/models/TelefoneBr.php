@@ -44,7 +44,30 @@ class TelefoneBr
             return null;
         }
 
-        return $tel;
+        return null;
+    }
+
+    /** Melhor telefone formatado entre os campos (prioriza celular/WhatsApp). */
+    public static function primeiroFormatado(array $telefones, string $ddd = '71'): ?string
+    {
+        $melhor = null;
+        $melhorPontos = 0;
+
+        foreach ($telefones as $tel) {
+            $formatado = self::normalizar($tel, $ddd);
+            if ($formatado === null) {
+                continue;
+            }
+
+            $whatsapp = self::paraWhatsApp($tel, $ddd);
+            $pontos = $whatsapp !== null ? strlen($whatsapp) : 1;
+            if ($pontos > $melhorPontos) {
+                $melhor = $formatado;
+                $melhorPontos = $pontos;
+            }
+        }
+
+        return $melhor;
     }
 
     /** Retorna número no formato internacional para WhatsApp (ex.: 5571985019440). */
@@ -73,8 +96,14 @@ class TelefoneBr
 
     private static function corrigirLegadoAccess(string $tel, string $ddd): string
     {
-        // 71(098)501-9440 → 71(98)501-9440
-        $tel = preg_replace('/^' . preg_quote($ddd, '/') . '\(0(\d{2,3})\)/', $ddd . '($1)', $tel);
+        // 71(098)501-9440 → 7198501-9440 | 92(099)322-1759 → 9299322-1759
+        $tel = preg_replace('/^(\d{2})\(0(\d{2,3})\)/', '$1$2', $tel);
+
+        // (09) 2236-4051 → (71) 92236-4051 (celular sem DDD no Access)
+        $tel = preg_replace('/^\(09\)\s*/', "($ddd) 9", $tel);
+
+        // 71(098)501-9440 com DDD padrão do escritório
+        $tel = preg_replace('/^' . preg_quote($ddd, '/') . '\(0(\d{2,3})\)/', $ddd . '$1', $tel);
 
         // (0 8)166-8309 → (71) 98166-8309
         $tel = preg_replace('/^\(0 8\)/', "($ddd) 98", $tel);
@@ -85,6 +114,12 @@ class TelefoneBr
 
         // (0 )397-1091 → (71) 3397-1091
         $tel = preg_replace('/^\(0 \)\s*(\d+)-(\d+)$/', "($ddd) 3$1-$2", $tel);
+
+        // Fixo Access: (71) 0304-4559 → (71) 3304-4559
+        $tel = preg_replace('/^\((\d{2})\)\s*03(\d{2}-\d{4})$/', '($1) 33$2', $tel);
+
+        // Celular Access: (71) 0248 / (71) 0642 — zero no lugar do 9 (não confundir com 03xx fixo)
+        $tel = preg_replace('/^\((\d{2})\)\s*0([246789]\d{2}-\d{4})$/', '($1) 9$2', $tel);
 
         if (preg_match('/^7\(0/', $tel)) {
             $tel = preg_replace('/^7\(0/', $ddd . '(', $tel);

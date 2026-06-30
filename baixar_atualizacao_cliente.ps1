@@ -141,6 +141,7 @@ Write-Host "  Banco importado com sucesso."
 
 Write-Step "4/5 Aplicando migracoes complementares"
 $migrations = @(
+    "corrigir_telefones.php",
     "atualizar_banco_anexos.php",
     "atualizar_banco_pericias.php",
     "atualizar_banco_usuarios.php",
