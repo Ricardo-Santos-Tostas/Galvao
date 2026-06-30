@@ -596,33 +596,71 @@ class ProcessoModel
     private function exprDataNasc(): string
     {
         $col = sqlId('DATA_NASC');
+        $parte2 = "CAST(SUBSTRING_INDEX(SUBSTRING_INDEX({$col}, '/', 2), '/', -1) AS UNSIGNED)";
 
+        // Access/Excel costuma gravar m/d/Y (ex: 6/30/1957); legado BR usa d/m/Y (ex: 30/06/1957).
         return "(
             CASE
                 WHEN {$col} REGEXP '^[0-9]{4}-' THEN DATE({$col})
-                WHEN {$col} REGEXP '^[0-9]{2}/[0-9]{2}/[0-9]{4}' THEN STR_TO_DATE(SUBSTRING({$col}, 1, 10), '%d/%m/%Y')
+                WHEN {$col} REGEXP '^[0-9]{1,2}/[0-9]{1,2}/[0-9]{4}'
+                    AND CAST(SUBSTRING_INDEX({$col}, '/', 1) AS UNSIGNED) > 12
+                    THEN STR_TO_DATE({$col}, '%d/%m/%Y')
+                WHEN {$col} REGEXP '^[0-9]{1,2}/[0-9]{1,2}/[0-9]{4}'
+                    AND {$parte2} > 12
+                    THEN STR_TO_DATE({$col}, '%m/%d/%Y')
+                WHEN {$col} REGEXP '^[0-9]{1,2}/[0-9]{1,2}/[0-9]{4}'
+                    THEN STR_TO_DATE({$col}, '%m/%d/%Y')
+                WHEN {$col} REGEXP '^[0-9]{2}/[0-9]{2}/[0-9]{4}'
+                    THEN STR_TO_DATE(SUBSTRING({$col}, 1, 10), '%d/%m/%Y')
                 ELSE NULL
             END
         )";
     }
 
-    private function calcularIdade(?string $dataNasc): ?int
+    private function parseDataNascPhp(?string $dataNasc): ?DateTime
     {
-        if (!$dataNasc) {
+        if ($dataNasc === null || trim($dataNasc) === '') {
             return null;
         }
 
         $texto = trim($dataNasc);
-        $dt = DateTime::createFromFormat('Y-m-d', substr($texto, 0, 10));
-        if (!$dt && preg_match('/^(\d{2})\/(\d{2})\/(\d{4})$/', $texto, $m)) {
-            $dt = DateTime::createFromFormat('Y-m-d', "{$m[3]}-{$m[2]}-{$m[1]}");
+
+        if (preg_match('/^(\d{4})-(\d{2})-(\d{2})/', $texto, $m)) {
+            $dt = DateTime::createFromFormat('Y-m-d', "{$m[1]}-{$m[2]}-{$m[3]}");
+            return $dt ?: null;
         }
-        if (!$dt) {
-            $ts = strtotime($texto);
-            if ($ts !== false) {
-                $dt = (new DateTime())->setTimestamp($ts);
+
+        if (preg_match('/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/', $texto, $m)) {
+            $a = (int) $m[1];
+            $b = (int) $m[2];
+            $ano = $m[3];
+
+            if ($a > 12) {
+                $dt = DateTime::createFromFormat('d/m/Y', "{$m[1]}/{$m[2]}/{$ano}");
+            } elseif ($b > 12) {
+                $dt = DateTime::createFromFormat('m/d/Y', "{$m[1]}/{$m[2]}/{$ano}");
+            } else {
+                $dt = DateTime::createFromFormat('m/d/Y', "{$m[1]}/{$m[2]}/{$ano}");
+            }
+
+            return $dt ?: null;
+        }
+
+        if (preg_match('/^(\d{2})\/(\d{2})\/(\d{4})$/', $texto, $m)) {
+            $dt = DateTime::createFromFormat('d/m/Y', $texto);
+            if ($dt) {
+                return $dt;
             }
         }
+
+        $ts = strtotime($texto);
+
+        return $ts !== false ? (new DateTime())->setTimestamp($ts) : null;
+    }
+
+    private function calcularIdade(?string $dataNasc): ?int
+    {
+        $dt = $this->parseDataNascPhp($dataNasc);
         if (!$dt) {
             return null;
         }

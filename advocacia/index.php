@@ -182,7 +182,7 @@ function iconeMenu(string $tipo): string {
         window.APP_PERMISSOES = <?= json_encode(Auth::permissoesJson(), JSON_UNESCAPED_UNICODE) ?>;
     </script>
     <?php if ($podeAniversariantes): ?>
-    <script src="assets/js/dashboard.js?v=6"></script>
+    <script src="assets/js/dashboard.js?v=7"></script>
     <?php endif; ?>
 </body>
 </html>
