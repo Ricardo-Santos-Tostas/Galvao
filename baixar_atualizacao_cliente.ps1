@@ -11,6 +11,52 @@ function Write-Step {
     Write-Host "==> $Message" -ForegroundColor Cyan
 }
 
+function Restart-ApacheSafe {
+    param([string]$XamppPath)
+
+    $reiniciado = $false
+
+    try {
+        $apache = Get-Service -Name "Apache2.4" -ErrorAction SilentlyContinue
+        if ($apache) {
+            if ($apache.Status -eq "Running") {
+                Restart-Service "Apache2.4" -Force -ErrorAction Stop
+            } else {
+                Start-Service "Apache2.4" -ErrorAction Stop
+            }
+            $reiniciado = $true
+            Write-Host "  Apache reiniciado (servico Windows)."
+        }
+    } catch {
+        Write-Host "  [AVISO] Servico Apache2.4: $($_.Exception.Message)" -ForegroundColor Yellow
+    }
+
+    if (-not $reiniciado) {
+        $stop = Join-Path $XamppPath "apache_stop.bat"
+        $start = Join-Path $XamppPath "apache_start.bat"
+        if ((Test-Path $stop) -and (Test-Path $start)) {
+            try {
+                & cmd /c "`"$stop`""
+                Start-Sleep -Seconds 2
+                & cmd /c "`"$start`""
+                $reiniciado = $true
+                Write-Host "  Apache reiniciado (painel XAMPP)."
+            } catch {
+                Write-Host "  [AVISO] Falha ao reiniciar via scripts do XAMPP." -ForegroundColor Yellow
+            }
+        }
+    }
+
+    if (-not $reiniciado) {
+        Write-Host ""
+        Write-Host "  [AVISO] Nao foi possivel reiniciar o Apache automaticamente." -ForegroundColor Yellow
+        Write-Host "  Abra o XAMPP e clique Stop/Start no Apache." -ForegroundColor Yellow
+        Write-Host "  Codigo e banco ja foram atualizados." -ForegroundColor Yellow
+    }
+
+    return $reiniciado
+}
+
 $repoPath = Join-Path $WorkspacePath "Galvao"
 $sourceApp = Join-Path $repoPath "advocacia"
 $targetApp = Join-Path $XamppPath "htdocs\advocacia"
@@ -113,17 +159,13 @@ foreach ($script in $migrations) {
 }
 
 Write-Step "5/5 Reiniciando Apache e verificando"
-$apache = Get-Service -Name "Apache2.4" -ErrorAction SilentlyContinue
-if ($apache) {
-    if ($apache.Status -eq "Running") { Restart-Service "Apache2.4" -Force }
-    else { Start-Service "Apache2.4" }
-}
+Restart-ApacheSafe -XamppPath $XamppPath | Out-Null
 
 $verifyScript = Join-Path $targetApp "scripts\verificar_instalacao.php"
 if (Test-Path $verifyScript) {
     & $phpExe $verifyScript
     if ($LASTEXITCODE -ne 0) {
-        throw "Verificacao falhou apos atualizacao."
+        throw "Verificacao falhou apos atualizacao. Verifique se o MySQL esta ligado."
     }
 }
 
