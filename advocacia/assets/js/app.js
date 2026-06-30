@@ -26,6 +26,14 @@ const App = (() => {
 
     ];
 
+    const PERICIA_CAMPOS = [
+        'PERICIA_ID',
+        'DATA_PERICIA',
+        'HORA_PERICIA',
+        'NOME_PERITO',
+        'ENDERECO_PERICIA',
+    ];
+
 
 
     let modoAtual = 'cadastro';
@@ -191,6 +199,8 @@ const App = (() => {
             if (el) dados[campo] = el.value;
 
         });
+
+        dados.pericia = coletarPericia();
 
 
 
@@ -888,11 +898,53 @@ const App = (() => {
 
         });
 
-
+        preencherPericia(registro.pericia || null);
 
         atualizarFoto(registro);
 
         atualizarDocumento(registro);
+
+    }
+
+
+
+    function preencherPericia(pericia) {
+
+        const mapa = {
+            PERICIA_ID: pericia?.ID ?? '',
+            DATA_PERICIA: pericia?.DATA_PERICIA ?? '',
+            HORA_PERICIA: pericia?.HORA_PERICIA ?? '',
+            NOME_PERITO: pericia?.NOME_PERITO ?? '',
+            ENDERECO_PERICIA: pericia?.ENDERECO ?? '',
+        };
+
+        PERICIA_CAMPOS.forEach(campo => {
+
+            const el = document.getElementById(campo);
+
+            if (el) {
+
+                el.value = mapa[campo] ?? '';
+
+            }
+
+        });
+
+    }
+
+
+
+    function coletarPericia() {
+
+        const pericia = {
+            ID: document.getElementById('PERICIA_ID')?.value ?? '',
+            DATA_PERICIA: document.getElementById('DATA_PERICIA')?.value ?? '',
+            HORA_PERICIA: document.getElementById('HORA_PERICIA')?.value ?? '',
+            NOME_PERITO: document.getElementById('NOME_PERITO')?.value ?? '',
+            ENDERECO: document.getElementById('ENDERECO_PERICIA')?.value ?? '',
+        };
+
+        return pericia;
 
     }
 
@@ -911,6 +963,8 @@ const App = (() => {
             }
 
         });
+
+        preencherPericia(null);
 
         atualizarFoto({ tem_foto: false });
 
@@ -971,6 +1025,8 @@ const App = (() => {
             if (el) dados[campo] = el.value;
 
         });
+
+        dados.pericia = coletarPericia();
 
 
 

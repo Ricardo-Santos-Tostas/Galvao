@@ -43,7 +43,7 @@ if ($tipo === 'pericias') {
     $titulo = 'Pauta de Audiências';
     $registros = $model->pautaAudiencias($dataInicio, $dataFim);
     $colunas = ['DIA_AUD', 'HORA_AUD', 'RECLAMANTE', 'CPF', 'RECLAMADA', 'PROC', 'JUNTA', 'ANDAMENTO'];
-    $filtroDica = 'Informe a data inicial e/ou final para filtrar as audiências do período desejado.';
+    $filtroDica = 'Informe a data inicial e/ou final para filtrar as audiências. Obrigatório para imprimir.';
 }
 
 $periodoTexto = '';
@@ -66,7 +66,7 @@ if ($dataInicio && $dataFim) {
     <title><?= htmlspecialchars($titulo) ?> · Moura Galvão</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Playfair+Display:wght@500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Playfair+Display:wght@500;600;700&display=swap" rel="stylesheet" media="screen">
     <link rel="stylesheet" href="assets/css/style.css">
     <link rel="icon" href="assets/img/logo.png" type="image/png">
 </head>
@@ -103,7 +103,7 @@ if ($dataInicio && $dataFim) {
         </form>
 
         <div class="relatorio-actions no-print">
-            <button type="button" onclick="window.print()">Imprimir relatório</button>
+            <button type="button" onclick="imprimirRelatorio()">Imprimir relatório</button>
             <a href="index.php">← Voltar ao menu</a>
         </div>
 
@@ -136,5 +136,6 @@ if ($dataInicio && $dataFim) {
             </tbody>
         </table>
     </div>
+    <script src="assets/js/print.js?v=3"></script>
 </body>
 </html>

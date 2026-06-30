@@ -27,14 +27,14 @@ $filtroAtivo = ($dataInicio || $dataFim);
 $registros = $model->listar($dataInicio, $dataFim);
 
 $colunas = [
-    'DATA_PERICIA' => 'Data',
-    'HORA_PERICIA' => 'Hora',
-    'RECLAMANTE'   => 'Reclamante',
-    'CPF'          => 'CPF',
-    'RECLAMADA'    => 'Reclamada',
-    'PROC_NUM'     => 'Nº Processo',
-    'NOME_PERITO'  => 'Nome do Perito',
-    'ENDERECO'     => 'Endereço',
+    'DATA_PERICIA' => ['label' => 'Data-P', 'class' => 'col-data-p'],
+    'HORA_PERICIA' => ['label' => 'Hora', 'class' => 'col-hora'],
+    'RECLAMANTE'   => ['label' => 'Reclamante', 'class' => 'col-reclamante'],
+    'CPF'          => ['label' => 'CPF', 'class' => 'col-cpf'],
+    'RECLAMADA'    => ['label' => 'Reclamada', 'class' => 'col-reclamada'],
+    'PROC_NUM'     => ['label' => 'Nº Processo', 'class' => 'col-processo'],
+    'NOME_PERITO'  => ['label' => 'Nome do Perito', 'class' => 'col-nome-perito'],
+    'ENDERECO'     => ['label' => 'Endereço', 'class' => 'col-endereco'],
 ];
 
 $periodoTexto = '';
@@ -57,7 +57,7 @@ if ($dataInicio && $dataFim) {
     <title>Perícias · Moura Galvão</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Playfair+Display:wght@500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Playfair+Display:wght@500;600;700&display=swap" rel="stylesheet" media="screen">
     <link rel="stylesheet" href="assets/css/style.css">
     <link rel="icon" href="assets/img/logo.png" type="image/png">
 </head>
@@ -93,15 +93,15 @@ if ($dataInicio && $dataFim) {
         </form>
 
         <div class="relatorio-actions no-print">
-            <button type="button" onclick="window.print()">Imprimir relatório</button>
+            <button type="button" class="btn-imprimir" onclick="imprimirRelatorio()">Imprimir relatório</button>
             <a href="index.php">← Voltar ao menu</a>
         </div>
 
         <table class="relatorio-tabela">
             <thead>
                 <tr>
-                    <?php foreach ($colunas as $rotulo): ?>
-                    <th><?= htmlspecialchars($rotulo) ?></th>
+                    <?php foreach ($colunas as $col): ?>
+                    <th class="<?= htmlspecialchars($col['class']) ?>"><?= htmlspecialchars($col['label']) ?></th>
                     <?php endforeach; ?>
                     <?php if ($podeEditarPericias): ?>
                     <th class="col-acoes no-print">Ações</th>
@@ -114,14 +114,14 @@ if ($dataInicio && $dataFim) {
                     <td colspan="<?= count($colunas) + ($podeEditarPericias ? 1 : 0) ?>">
                         <?= $filtroAtivo
                             ? 'Nenhuma perícia encontrada para o período informado.'
-                            : 'Nenhuma perícia cadastrada. Execute atualizar_banco_pericias.bat para criar a tabela e importar os dados.' ?>
+                            : 'Nenhuma perícia cadastrada.' ?>
                     </td>
                 </tr>
                 <?php else: ?>
                 <?php foreach ($registros as $reg): ?>
                 <tr data-id="<?= (int) ($reg['ID'] ?? 0) ?>">
-                    <?php foreach (array_keys($colunas) as $campo): ?>
-                    <td><?= htmlspecialchars($reg[$campo] ?? '') ?></td>
+                    <?php foreach ($colunas as $campo => $col): ?>
+                    <td class="<?= htmlspecialchars($col['class']) ?>"><?= htmlspecialchars($reg[$campo] ?? '') ?></td>
                     <?php endforeach; ?>
                     <?php if ($podeEditarPericias): ?>
                     <td class="col-acoes no-print">
@@ -150,7 +150,7 @@ if ($dataInicio && $dataFim) {
 
                 <div class="pericia-form-grid">
                     <div class="filtro-field">
-                        <label for="periciaData">Data</label>
+                        <label for="periciaData">Data-P</label>
                         <input type="text" id="periciaData" name="DATA_PERICIA" placeholder="dd/mm/aaaa">
                     </div>
                     <div class="filtro-field">
@@ -191,6 +191,7 @@ if ($dataInicio && $dataFim) {
         </div>
     </div>
 
+    <script src="assets/js/print.js?v=2"></script>
     <script src="assets/js/pericias.js?v=1"></script>
 </body>
 </html>

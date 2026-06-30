@@ -189,7 +189,10 @@ class ApiController
 
         }
 
-
+        $pericia = $this->pericias->buscarPorCadastro($id);
+        if ($pericia) {
+            $registro['pericia'] = $pericia;
+        }
 
         $this->responder(['registro' => $registro]);
 
@@ -213,6 +216,12 @@ class ApiController
 
         }
 
+        $periciaDados = null;
+        if (isset($dados['pericia']) && is_array($dados['pericia'])) {
+            $periciaDados = $dados['pericia'];
+            unset($dados['pericia']);
+        }
+
         $idAntes = isset($dados['CADASTRO']) && $dados['CADASTRO'] !== '' ? (int) $dados['CADASTRO'] : 0;
         $antes = ($idAntes > 0 && $this->model->registroExiste($idAntes))
             ? $this->model->buscarPorId($idAntes)
@@ -221,6 +230,18 @@ class ApiController
         $id = $this->model->salvar($dados);
 
         $registro = $this->model->buscarPorId($id);
+
+        if (is_array($periciaDados)) {
+            $periciaSalva = $this->salvarPericiaDoCadastro($id, $registro, $periciaDados);
+            if ($periciaSalva) {
+                $registro['pericia'] = $periciaSalva;
+            }
+        } else {
+            $periciaExistente = $this->pericias->buscarPorCadastro($id);
+            if ($periciaExistente) {
+                $registro['pericia'] = $periciaExistente;
+            }
+        }
 
         $nome = trim((string) ($registro['RECLAMANTE'] ?? ''));
         $ref = '#' . $id;
@@ -251,6 +272,68 @@ class ApiController
 
         ]);
 
+    }
+
+
+
+    private function salvarPericiaDoCadastro(int $cadastroId, array $registro, array $periciaDados): ?array
+    {
+        $idPericia = isset($periciaDados['ID']) && $periciaDados['ID'] !== ''
+            ? (int) $periciaDados['ID']
+            : 0;
+
+        if ($idPericia <= 0) {
+            $existente = $this->pericias->buscarPorCadastro($cadastroId);
+            if ($existente) {
+                $idPericia = (int) ($existente['ID'] ?? 0);
+            }
+        }
+
+        $payload = [
+            'ID'           => $idPericia > 0 ? $idPericia : null,
+            'CADASTRO'     => $cadastroId,
+            'ORIGEM'       => 'cadastro',
+            'DATA_PERICIA' => $periciaDados['DATA_PERICIA'] ?? null,
+            'HORA_PERICIA' => $periciaDados['HORA_PERICIA'] ?? null,
+            'NOME_PERITO'  => $periciaDados['NOME_PERITO'] ?? null,
+            'ENDERECO'     => $periciaDados['ENDERECO'] ?? ($periciaDados['ENDERECO_PERICIA'] ?? null),
+            'RECLAMANTE'   => $registro['RECLAMANTE'] ?? null,
+            'CPF'          => $registro['CPF'] ?? null,
+            'RECLAMADA'    => $registro['RECLAMADA'] ?? null,
+            'PROC_NUM'     => $registro['PROC'] ?? null,
+        ];
+
+        if (!$this->pericias->temDadosPericia($payload) && $idPericia <= 0) {
+            return null;
+        }
+
+        $antes = ($idPericia > 0 && $this->pericias->existe($idPericia))
+            ? $this->pericias->buscarPorId($idPericia)
+            : null;
+
+        $id = $this->pericias->salvar($payload);
+        $pericia = $this->pericias->buscarPorId($id);
+
+        $nome = trim((string) ($pericia['RECLAMANTE'] ?? ''));
+        $ref = '#' . $id;
+
+        if ($antes) {
+            Log::registrar(
+                'pericia_editar',
+                'Alterou perícia ' . $ref . ($nome !== '' ? ' — ' . $nome : '') . ' (via cadastro)',
+                'pericias',
+                $ref
+            );
+        } else {
+            Log::registrar(
+                'pericia_criar',
+                'Criou perícia ' . $ref . ($nome !== '' ? ' — ' . $nome : '') . ' (via cadastro)',
+                'pericias',
+                $ref
+            );
+        }
+
+        return $pericia;
     }
 
 

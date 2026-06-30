@@ -10,7 +10,9 @@ Auth::requerLogin();
 if (!Auth::podeVer('cadastro')
     && !Auth::podeVer('consulta_processo')
     && !Auth::podeVer('consulta_reclamante')
-    && !Auth::podeVer('consulta_reclamada')) {
+    && !Auth::podeVer('consulta_reclamada')
+    && !Auth::podeVer('pauta_audiencias')
+    && !Auth::podeVer('pauta_reclamante')) {
     http_response_code(403);
     exit('Acesso negado');
 }

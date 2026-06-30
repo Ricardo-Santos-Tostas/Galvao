@@ -128,6 +128,30 @@ class ProcessoModel
         ];
     }
 
+    /** @return array<int, true> IDs de cadastros que possuem foto. */
+    public function cadastrosComFoto(array $ids): array
+    {
+        $ids = array_values(array_unique(array_filter(array_map('intval', $ids))));
+        if ($ids === []) {
+            return [];
+        }
+
+        $placeholders = implode(', ', array_fill(0, count($ids), '?'));
+        $sql = 'SELECT ' . sqlId('CADASTRO') . ' FROM ' . $this->tabela
+            . ' WHERE ' . sqlId('CADASTRO') . " IN ({$placeholders})"
+            . ' AND ' . sqlId('FOTO') . ' IS NOT NULL AND LENGTH(' . sqlId('FOTO') . ') > 0';
+
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute($ids);
+
+        $mapa = [];
+        while ($id = $stmt->fetchColumn()) {
+            $mapa[(int) $id] = true;
+        }
+
+        return $mapa;
+    }
+
     public function obterDocumento(int $id): ?array
     {
         $sql = 'SELECT ' . sqlId('DOCUMENTO') . ', ' . sqlId('DOCUMENTO_TIPO') . ', '

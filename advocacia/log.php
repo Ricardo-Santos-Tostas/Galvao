@@ -88,7 +88,7 @@ function badgeAcao(string $acao): string
     <title>Log de Atividades · Moura Galvão</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Playfair+Display:wght@500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Playfair+Display:wght@500;600;700&display=swap" rel="stylesheet" media="screen">
     <link rel="stylesheet" href="assets/css/style.css">
     <link rel="icon" href="assets/img/logo.png" type="image/png">
 </head>
@@ -181,7 +181,7 @@ function badgeAcao(string $acao): string
         </form>
 
         <div class="relatorio-actions no-print">
-            <button type="button" onclick="window.print()">Imprimir log</button>
+            <button type="button" onclick="imprimirRelatorio()">Imprimir log</button>
             <a href="index.php">← Voltar ao menu</a>
         </div>
 
@@ -242,5 +242,6 @@ function badgeAcao(string $acao): string
     </div>
 
     <?php include __DIR__ . '/views/partials/footer.php'; ?>
+    <script src="assets/js/print.js?v=2"></script>
 </body>
 </html>

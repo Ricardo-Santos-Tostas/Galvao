@@ -22,14 +22,15 @@ class PericiaModel
         return [
             'ID', 'CADASTRO', 'DATA_PERICIA', 'HORA_PERICIA',
             'RECLAMANTE', 'CPF', 'RECLAMADA', 'PROC_NUM',
-            'NOME_PERITO', 'ENDERECO',
+            'NOME_PERITO', 'ENDERECO', 'ORIGEM',
         ];
     }
 
     public function listar(?string $dataInicio = null, ?string $dataFim = null): array
     {
         $sql = 'SELECT * FROM ' . $this->tabela
-            . ' WHERE ' . sqlId('DATA_PERICIA') . ' IS NOT NULL AND TRIM(' . sqlId('DATA_PERICIA') . ") != ''";
+            . " WHERE " . sqlId('ORIGEM') . " = 'cadastro'"
+            . ' AND ' . sqlId('DATA_PERICIA') . ' IS NOT NULL AND TRIM(' . sqlId('DATA_PERICIA') . ") != ''";
 
         $params = [];
         $this->aplicarFiltroData($sql, $params, $dataInicio, $dataFim);
@@ -53,13 +54,48 @@ class PericiaModel
         return $row ? $this->formatarRegistro($row) : null;
     }
 
+    public function buscarPorCadastro(int $cadastro): ?array
+    {
+        if ($cadastro <= 0) {
+            return null;
+        }
+
+        $sql = 'SELECT * FROM ' . $this->tabela
+            . ' WHERE ' . sqlId('CADASTRO') . ' = :cadastro'
+            . " AND " . sqlId('ORIGEM') . " = 'cadastro'"
+            . ' ORDER BY ' . sqlId('ID') . ' DESC LIMIT 1';
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute(['cadastro' => $cadastro]);
+        $row = $stmt->fetch();
+
+        return $row ? $this->formatarRegistro($row) : null;
+    }
+
+    public function temDadosPericia(array $dados): bool
+    {
+        $campos = ['DATA_PERICIA', 'HORA_PERICIA', 'NOME_PERITO', 'ENDERECO'];
+        foreach ($campos as $campo) {
+            if (isset($dados[$campo]) && trim((string) $dados[$campo]) !== '') {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     public function salvar(array $dados): int
     {
         $id = isset($dados['ID']) && $dados['ID'] !== '' ? (int) $dados['ID'] : 0;
 
         $valores = [];
+        $isUpdate = $id > 0 && $this->existe($id);
+
         foreach (self::colunas() as $campo) {
             if ($campo === 'ID') {
+                continue;
+            }
+
+            if ($isUpdate && $campo === 'ORIGEM') {
                 continue;
             }
 
@@ -70,13 +106,19 @@ class PericiaModel
                 continue;
             }
 
+            if ($campo === 'ORIGEM') {
+                $origem = trim((string) ($dados['ORIGEM'] ?? 'cadastro'));
+                $valores[$campo] = $origem !== '' ? $origem : 'cadastro';
+                continue;
+            }
+
             $valor = $dados[$campo] ?? null;
             $valores[$campo] = ($valor === null || trim((string) $valor) === '')
                 ? null
                 : trim((string) $valor);
         }
 
-        if ($id > 0 && $this->existe($id)) {
+        if ($isUpdate) {
             $sets = [];
             foreach ($valores as $campo => $_) {
                 $sets[] = sqlId($campo) . ' = :' . $campo;

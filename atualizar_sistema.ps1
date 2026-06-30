@@ -53,6 +53,29 @@ if ($configBackup -and (Test-Path $configBackup)) {
     Remove-Item -Path $configBackup -Force
 }
 
+$phpExe = Join-Path $XamppPath "php\php.exe"
+
+Write-Step "Atualizando banco de dados (se necessario)"
+$migrations = @(
+    "atualizar_banco_anexos.php",
+    "atualizar_banco_pericias.php",
+    "atualizar_banco_usuarios.php",
+    "atualizar_banco_log.php"
+)
+
+if (Test-Path $phpExe) {
+    foreach ($script in $migrations) {
+        $scriptPath = Join-Path $targetApp "scripts\$script"
+        if (Test-Path $scriptPath) {
+            Write-Host "  Rodando $script ..."
+            & $phpExe $scriptPath
+            if ($LASTEXITCODE -ne 0) {
+                throw "Falha ao executar $script"
+            }
+        }
+    }
+}
+
 $apacheService = Get-Service -Name "Apache2.4" -ErrorAction SilentlyContinue
 if ($apacheService) {
     if ($apacheService.Status -eq "Running") {
@@ -62,7 +85,6 @@ if ($apacheService) {
     }
 }
 
-$phpExe = Join-Path $XamppPath "php\php.exe"
 $verifyScript = Join-Path $targetApp "scripts\verificar_instalacao.php"
 if ((Test-Path $phpExe) -and (Test-Path $verifyScript)) {
     & $phpExe $verifyScript

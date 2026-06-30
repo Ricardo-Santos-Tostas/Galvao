@@ -202,6 +202,35 @@ $label_busca = $label_busca ?? 'Consulta por nome, CPF, reclamante ou reclamada'
             </div>
         </section>
 
+        <?php if ($modo === 'cadastro'): ?>
+        <!-- Perícia -->
+        <section class="form-section form-section-pericia">
+            <h2 class="section-title">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+                Perícia
+            </h2>
+            <input type="hidden" id="PERICIA_ID" name="PERICIA_ID">
+            <div class="form-grid form-grid-processo form-grid-pericia">
+                <div class="field-group field-group-data">
+                    <label for="DATA_PERICIA">Data-P</label>
+                    <input type="text" id="DATA_PERICIA" name="DATA_PERICIA" placeholder="dd/mm/aaaa" <?= $readonly ?>>
+                </div>
+                <div class="field-group field-group-sm">
+                    <label for="HORA_PERICIA">Hora</label>
+                    <input type="text" id="HORA_PERICIA" name="HORA_PERICIA" placeholder="hh:mm" <?= $readonly ?>>
+                </div>
+                <div class="field-group">
+                    <label for="NOME_PERITO">Nome do Perito</label>
+                    <input type="text" id="NOME_PERITO" name="NOME_PERITO" <?= $readonly ?>>
+                </div>
+                <div class="field-group">
+                    <label for="ENDERECO_PERICIA">Endereço</label>
+                    <input type="text" id="ENDERECO_PERICIA" name="ENDERECO_PERICIA" <?= $readonly ?>>
+                </div>
+            </div>
+        </section>
+        <?php endif; ?>
+
         <!-- Andamento -->
         <section class="form-section form-section-andamento">
             <h2 class="section-title">
