@@ -124,6 +124,8 @@ const App = (() => {
 
             document.getElementById('inputDocumento')?.addEventListener('change', onDocumentoSelecionado);
 
+            initModalDuplicado();
+
         }
 
     }
@@ -181,6 +183,260 @@ const App = (() => {
 
 
     let webcamStream = null;
+
+    let duplicadoResolver = null;
+
+
+
+    function initModalDuplicado() {
+
+        document.getElementById('btnFecharDuplicado')?.addEventListener('click', () => fecharModalDuplicado('cancelar'));
+
+        document.getElementById('btnDuplicadoCancelar')?.addEventListener('click', () => fecharModalDuplicado('cancelar'));
+
+        document.getElementById('modalDuplicadoBackdrop')?.addEventListener('click', () => fecharModalDuplicado('cancelar'));
+
+        document.getElementById('btnDuplicadoNovo')?.addEventListener('click', () => fecharModalDuplicado('novo'));
+
+        document.getElementById('btnDuplicadoSubstituir')?.addEventListener('click', () => {
+
+            const selecionado = document.querySelector('input[name="duplicado_escolha"]:checked');
+
+            const id = selecionado ? parseInt(selecionado.value, 10) : 0;
+
+            if (id > 0) {
+
+                fecharModalDuplicado('substituir', id);
+
+            }
+
+        });
+
+    }
+
+
+
+    function fecharModalDuplicado(acao, id = 0) {
+
+        const modal = document.getElementById('modalDuplicado');
+
+        if (modal) {
+
+            modal.hidden = true;
+
+        }
+
+        if (duplicadoResolver) {
+
+            const resolver = duplicadoResolver;
+
+            duplicadoResolver = null;
+
+            if (acao === 'substituir') {
+
+                resolver({ acao: 'substituir', id });
+
+            } else if (acao === 'novo') {
+
+                resolver({ acao: 'novo' });
+
+            } else {
+
+                resolver({ acao: 'cancelar' });
+
+            }
+
+        }
+
+    }
+
+
+
+    function textoMotivoDuplicado(existentes) {
+
+        const porNome = existentes.some(item => item.por_nome);
+
+        const porCpf = existentes.some(item => item.por_cpf);
+
+        if (porNome && porCpf) {
+
+            return 'Já existe(m) cadastro(s) com este nome ou CPF:';
+
+        }
+
+        if (porCpf) {
+
+            return 'Já existe(m) cadastro(s) com este CPF:';
+
+        }
+
+        return 'Já existe(m) cadastro(s) com este nome:';
+
+    }
+
+
+
+    function abrirModalDuplicado(data) {
+
+        return new Promise((resolve) => {
+
+            const modal = document.getElementById('modalDuplicado');
+
+            const lista = document.getElementById('duplicadoLista');
+
+            const texto = document.getElementById('duplicadoTexto');
+
+            if (!modal || !lista || !texto) {
+
+                resolve({ acao: 'cancelar' });
+
+                return;
+
+            }
+
+            texto.textContent = textoMotivoDuplicado(data.existentes);
+
+            lista.innerHTML = '';
+
+            const multiplos = data.existentes.length > 1;
+
+            data.existentes.forEach((item, idx) => {
+
+                const li = document.createElement('li');
+
+                li.className = 'duplicado-item';
+
+                const partes = [`Cadastro #${item.id}`];
+
+                if (item.reclamante) partes.push(item.reclamante);
+
+                if (item.cpf) partes.push(`CPF: ${item.cpf}`);
+
+                if (item.reclamada) partes.push(item.reclamada);
+
+                if (multiplos) {
+
+                    const label = document.createElement('label');
+
+                    label.className = 'duplicado-item-label';
+
+                    const radio = document.createElement('input');
+
+                    radio.type = 'radio';
+
+                    radio.name = 'duplicado_escolha';
+
+                    radio.value = String(item.id);
+
+                    radio.checked = idx === 0;
+
+                    label.appendChild(radio);
+
+                    const span = document.createElement('span');
+
+                    span.textContent = partes.join(' — ');
+
+                    label.appendChild(span);
+
+                    li.appendChild(label);
+
+                } else {
+
+                    li.textContent = partes.join(' — ');
+
+                }
+
+                lista.appendChild(li);
+
+            });
+
+            duplicadoResolver = resolve;
+
+            modal.hidden = false;
+
+        });
+
+    }
+
+
+
+    function coletarDadosFormulario() {
+
+        const dados = {};
+
+        CAMPOS.forEach(campo => {
+
+            const el = document.getElementById(campo);
+
+            if (el) dados[campo] = el.value;
+
+        });
+
+        dados.pericia = coletarPericia();
+
+        return dados;
+
+    }
+
+
+
+    async function enviarSalvar(opcoes = {}) {
+
+        const dados = coletarDadosFormulario();
+
+        if (opcoes.forcarNovo) {
+
+            dados._forcar_novo = true;
+
+        }
+
+        if (opcoes.substituirId) {
+
+            dados._substituir_id = opcoes.substituirId;
+
+        }
+
+        const resp = await fetch(`${API_BASE}?acao=salvar`, {
+
+            method: 'POST',
+
+            headers: { 'Content-Type': 'application/json' },
+
+            body: JSON.stringify(dados)
+
+        });
+
+        const data = await resp.json();
+
+        if (data.duplicado && data.existentes?.length) {
+
+            const escolha = await abrirModalDuplicado(data);
+
+            if (escolha.acao === 'substituir') {
+
+                return enviarSalvar({ substituirId: escolha.id });
+
+            }
+
+            if (escolha.acao === 'novo') {
+
+                return enviarSalvar({ forcarNovo: true });
+
+            }
+
+            return { sucesso: false, cancelado: true };
+
+        }
+
+        if (!resp.ok && data.erro) {
+
+            throw new Error(data.erro);
+
+        }
+
+        return data;
+
+    }
 
 
 
@@ -484,43 +740,19 @@ const App = (() => {
 
         }
 
+        const data = await enviarSalvar();
 
+        if (data.cancelado) {
 
-        const dados = {};
+            throw new Error('Salvamento cancelado.');
 
-        CAMPOS.forEach(campo => {
-
-            const el = document.getElementById(campo);
-
-            if (el) dados[campo] = el.value;
-
-        });
-
-        dados.pericia = coletarPericia();
-
-
-
-        const resp = await fetch(`${API_BASE}?acao=salvar`, {
-
-            method: 'POST',
-
-            headers: { 'Content-Type': 'application/json' },
-
-            body: JSON.stringify(dados)
-
-        });
-
-        const data = await resp.json();
-
-
+        }
 
         if (!data.sucesso) {
 
             throw new Error(data.erro || 'Não foi possível salvar o cadastro.');
 
         }
-
-
 
         if (data.registro) {
 
@@ -529,8 +761,6 @@ const App = (() => {
             idCarregado = data.id;
 
         }
-
-
 
         return data.id;
 
@@ -1238,35 +1468,15 @@ const App = (() => {
 
     async function salvarRegistro() {
 
-        const dados = {};
-
-        CAMPOS.forEach(campo => {
-
-            const el = document.getElementById(campo);
-
-            if (el) dados[campo] = el.value;
-
-        });
-
-        dados.pericia = coletarPericia();
-
-
-
         try {
 
-            const resp = await fetch(`${API_BASE}?acao=salvar`, {
+            const data = await enviarSalvar();
 
-                method: 'POST',
+            if (data.cancelado) {
 
-                headers: { 'Content-Type': 'application/json' },
+                return;
 
-                body: JSON.stringify(dados)
-
-            });
-
-            const data = await resp.json();
-
-
+            }
 
             if (data.sucesso) {
 
@@ -1288,7 +1498,7 @@ const App = (() => {
 
         } catch (err) {
 
-            alert('Erro ao salvar registro.');
+            alert('Erro ao salvar: ' + (err.message || 'Erro desconhecido'));
 
             console.error(err);
 

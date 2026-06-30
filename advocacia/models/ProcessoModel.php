@@ -78,6 +78,91 @@ class ProcessoModel
         return (bool) $stmt->fetchColumn();
     }
 
+    /** CPF com 11 dígitos válidos para comparação (ignora vazio e sequências repetidas). */
+    public static function cpfUtilParaComparacao(?string $cpf): ?string
+    {
+        $digits = preg_replace('/\D/', '', (string) $cpf);
+        if (strlen($digits) !== 11) {
+            return null;
+        }
+        if (preg_match('/^(\d)\1{10}$/', $digits)) {
+            return null;
+        }
+
+        return $digits;
+    }
+
+    public static function normalizarNomeComparacao(string $nome): string
+    {
+        $nome = preg_replace('/\s+/u', ' ', trim($nome));
+
+        return mb_strtoupper($nome, 'UTF-8');
+    }
+
+    /**
+     * Busca cadastros existentes com o mesmo nome ou CPF.
+     *
+     * @return list<array{id: int, reclamante: ?string, cpf: ?string, reclamada: ?string, proc: ?string, label: string, por_nome: bool, por_cpf: bool}>
+     */
+    public function buscarDuplicados(int $excluirId, string $nome, ?string $cpf): array
+    {
+        $nomeNorm = self::normalizarNomeComparacao($nome);
+        $cpfDigits = self::cpfUtilParaComparacao($cpf);
+
+        if ($nomeNorm === '' && $cpfDigits === null) {
+            return [];
+        }
+
+        $matchParts = [];
+        $params = [];
+
+        if ($nomeNorm !== '') {
+            $matchParts[] = 'UPPER(TRIM(' . sqlId('RECLAMANTE') . ')) = :nome';
+            $params['nome'] = $nomeNorm;
+        }
+        if ($cpfDigits !== null) {
+            $cpfExpr = "REPLACE(REPLACE(REPLACE(" . sqlId('CPF') . ", '.', ''), '-', ''), ' ', '')";
+            $matchParts[] = $cpfExpr . ' = :cpf_digits';
+            $params['cpf_digits'] = $cpfDigits;
+        }
+
+        $sql = 'SELECT ' . sqlId('CADASTRO') . ', ' . sqlId('RECLAMANTE') . ', '
+            . sqlId('CPF') . ', ' . sqlId('RECLAMADA') . ', ' . sqlId('PROC') . '
+            FROM ' . $this->tabela . '
+            WHERE ' . ($excluirId > 0 ? sqlId('CADASTRO') . ' != :excluir AND ' : '')
+            . '(' . implode(' OR ', $matchParts) . ')
+            ORDER BY ' . sqlId('CADASTRO') . ' ASC
+            LIMIT 10';
+
+        if ($excluirId > 0) {
+            $params['excluir'] = $excluirId;
+        }
+
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute($params);
+
+        $resultados = [];
+        foreach ($stmt->fetchAll() as $row) {
+            $porNome = $nomeNorm !== ''
+                && self::normalizarNomeComparacao((string) ($row['RECLAMANTE'] ?? '')) === $nomeNorm;
+            $porCpf = $cpfDigits !== null
+                && self::cpfUtilParaComparacao($row['CPF'] ?? null) === $cpfDigits;
+
+            $resultados[] = [
+                'id'         => (int) $row['CADASTRO'],
+                'reclamante' => $row['RECLAMANTE'] ?? null,
+                'cpf'        => $row['CPF'] ?? null,
+                'reclamada'  => $row['RECLAMADA'] ?? null,
+                'proc'       => $row['PROC'] ?? null,
+                'label'      => $this->montarLabel($row),
+                'por_nome'   => $porNome,
+                'por_cpf'    => $porCpf,
+            ];
+        }
+
+        return $resultados;
+    }
+
     public function salvarFoto(int $id, string $conteudo, string $mime): void
     {
         if (!$this->registroExiste($id)) {

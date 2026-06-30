@@ -293,6 +293,25 @@ $label_busca = $label_busca ?? 'Consulta por nome, CPF, reclamante ou reclamada'
     </div>
 
     <?php if ($modo === 'cadastro' && !$somente_leitura): ?>
+    <div class="modal-duplicado" id="modalDuplicado" hidden>
+        <div class="modal-duplicado-backdrop" id="modalDuplicadoBackdrop"></div>
+        <div class="modal-duplicado-panel" role="dialog" aria-labelledby="modalDuplicadoTitulo">
+            <header class="modal-duplicado-header">
+                <h2 id="modalDuplicadoTitulo">Cadastro já existente</h2>
+                <button type="button" class="modal-duplicado-fechar" id="btnFecharDuplicado" aria-label="Fechar">&times;</button>
+            </header>
+            <div class="modal-duplicado-corpo">
+                <p id="duplicadoTexto" class="duplicado-texto"></p>
+                <ul id="duplicadoLista" class="duplicado-lista"></ul>
+                <p class="duplicado-aviso">Substituir grava os dados do formulário no cadastro escolhido, sobrescrevendo as informações atuais.</p>
+            </div>
+            <div class="modal-duplicado-acoes">
+                <button type="button" class="btn-filtro btn-filtro-secondary" id="btnDuplicadoCancelar">Cancelar</button>
+                <button type="button" class="btn-filtro btn-filtro-secondary" id="btnDuplicadoNovo">Criar novo mesmo assim</button>
+                <button type="button" class="btn-filtro btn-filtro-primary" id="btnDuplicadoSubstituir">Substituir cadastro existente</button>
+            </div>
+        </div>
+    </div>
     <div class="modal-webcam" id="modalWebcam" hidden>
         <div class="modal-webcam-backdrop" id="modalWebcamBackdrop"></div>
         <div class="modal-webcam-panel" role="dialog" aria-labelledby="modalWebcamTitulo">

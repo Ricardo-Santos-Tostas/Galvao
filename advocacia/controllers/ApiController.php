@@ -222,9 +222,36 @@ class ApiController
             unset($dados['pericia']);
         }
 
-        $idAntes = isset($dados['CADASTRO']) && $dados['CADASTRO'] !== '' ? (int) $dados['CADASTRO'] : 0;
-        $antes = ($idAntes > 0 && $this->model->registroExiste($idAntes))
-            ? $this->model->buscarPorId($idAntes)
+        $forcarNovo = !empty($dados['_forcar_novo']);
+        $substituirId = isset($dados['_substituir_id']) ? (int) $dados['_substituir_id'] : 0;
+        unset($dados['_forcar_novo'], $dados['_substituir_id']);
+
+        $idForm = isset($dados['CADASTRO']) && $dados['CADASTRO'] !== '' ? (int) $dados['CADASTRO'] : 0;
+        $idExcluirDup = ($idForm > 0 && $this->model->registroExiste($idForm)) ? $idForm : 0;
+
+        if ($substituirId > 0) {
+            if (!$this->model->registroExiste($substituirId)) {
+                $this->responder(['erro' => 'Cadastro para substituir não encontrado.'], 404);
+            }
+            $dados['CADASTRO'] = $substituirId;
+            $idForm = $substituirId;
+        } elseif (!$forcarNovo) {
+            $duplicados = $this->model->buscarDuplicados(
+                $idExcluirDup,
+                trim((string) ($dados['RECLAMANTE'] ?? '')),
+                $dados['CPF'] ?? null
+            );
+            if ($duplicados !== []) {
+                $this->responder([
+                    'duplicado'  => true,
+                    'existentes' => $duplicados,
+                ]);
+                return;
+            }
+        }
+
+        $idAntes = ($idForm > 0 && $this->model->registroExiste($idForm))
+            ? $this->model->buscarPorId($idForm)
             : null;
 
         $id = $this->model->salvar($dados);
@@ -246,9 +273,9 @@ class ApiController
         $nome = trim((string) ($registro['RECLAMANTE'] ?? ''));
         $ref = '#' . $id;
 
-        if ($antes) {
+        if ($idAntes) {
             $alteracoes = LogModel::diffCampos(
-                $antes,
+                $idAntes,
                 $registro,
                 ProcessoModel::colunas(),
                 LogModel::rotulosCadastro()
