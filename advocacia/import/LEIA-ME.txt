@@ -1,0 +1,26 @@
+IMPORTAR DADOS ATUALIZADOS DO ACCESS
+====================================
+
+1. No Microsoft Access, abra o banco que a empresa continuou usando.
+
+2. Exporte a tabela principal (Planilha1):
+   - Clique com o botão direito na tabela
+   - Exportar → Arquivo de texto (CSV)
+   - Salve como: planilha_access.csv
+
+3. Copie o arquivo para esta pasta:
+   advocacia\import\planilha_access.csv
+
+4. No XAMPP, ligue o MySQL.
+
+5. Execute na pasta advocacia:
+   sincronizar_access.bat
+
+O script faz backup automático antes de sincronizar.
+
+O que acontece:
+- Cadastros com o mesmo número (CADASTRO) são ATUALIZADOS com dados do Access
+- Cadastros novos do Access são INSERIDOS
+- Fotos, documentos PDF e área jurídica feitos no sistema novo são PRESERVADOS
+
+NÃO use migrar.bat para atualização — ele apaga tudo e recria a tabela.
