@@ -6,8 +6,8 @@ echo ============================================
 echo  ATUALIZAR SISTEMA - Moura Galvao
 echo ============================================
 echo.
-echo Atualiza codigo e banco de dados do GitHub.
-echo O MySQL local sera SUBSTITUIDO pelo backup atualizado.
+echo Atualiza apenas o codigo do GitHub.
+echo O banco de dados local NAO sera alterado.
 echo.
 
 powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0baixar_atualizacao_cliente.ps1"
