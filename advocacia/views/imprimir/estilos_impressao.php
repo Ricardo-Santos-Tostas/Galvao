@@ -71,10 +71,18 @@ $estilosExtras = $estilosExtras ?? '';
         align-items: center;
         gap: 6px;
         min-width: 0;
+        flex: 1;
+    }
+    .imp-cabecalho-logo-marca {
+        height: 64px;
+        width: auto;
+        max-width: 65%;
+        object-fit: contain;
+        flex-shrink: 0;
     }
     .imp-cabecalho-logo {
-        width: 42px;
-        height: 42px;
+        width: 58px;
+        height: 58px;
         object-fit: contain;
         flex-shrink: 0;
     }
@@ -192,7 +200,8 @@ $estilosExtras = $estilosExtras ?? '';
             padding-top: 2px;
         }
 
-        .imp-cabecalho-logo {
+        .imp-cabecalho-logo,
+        .imp-cabecalho-logo-marca {
             -webkit-print-color-adjust: exact;
             print-color-adjust: exact;
         }
