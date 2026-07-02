@@ -211,6 +211,18 @@ class ProcessoModel
         $stmt->execute();
     }
 
+    public function excluir(int $id): void
+    {
+        if (!$this->registroExiste($id)) {
+            throw new RuntimeException('Cadastro não encontrado.');
+        }
+
+        $sql = 'DELETE FROM ' . $this->tabela . ' WHERE ' . sqlId('CADASTRO') . ' = :id';
+        $stmt = $this->db->prepare($sql);
+        $stmt->bindValue(':id', $id, PDO::PARAM_INT);
+        $stmt->execute();
+    }
+
     public function obterFoto(int $id): ?array
     {
         $sql = 'SELECT ' . sqlId('FOTO') . ', ' . sqlId('FOTO_TIPO') . ' FROM ' . $this->tabela

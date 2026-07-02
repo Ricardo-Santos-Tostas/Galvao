@@ -107,6 +107,12 @@ class ApiController
 
                     break;
 
+                case 'excluir_registro':
+
+                    $this->excluirRegistro();
+
+                    break;
+
                 case 'pericia':
 
                     $this->pericia();
@@ -597,6 +603,52 @@ class ApiController
         $this->responder([
             'sucesso'  => true,
             'registro' => $this->model->buscarPorId($id),
+        ]);
+
+    }
+
+
+
+    private function excluirRegistro(): void
+
+    {
+
+        if (!Auth::podeEditar('cadastro')) {
+            $this->responder(['erro' => 'Sem permissão para editar cadastros'], 403);
+        }
+
+        $dados = json_decode(file_get_contents('php://input'), true);
+        if (!is_array($dados)) {
+            $dados = $_POST;
+        }
+
+        $id = (int) ($dados['id'] ?? 0);
+        if ($id <= 0) {
+            $this->responder(['erro' => 'Cadastro inválido'], 400);
+        }
+
+        $registro = $this->model->buscarPorId($id);
+        if ($registro === null) {
+            $this->responder(['erro' => 'Cadastro não encontrado'], 404);
+        }
+
+        $nome = trim((string) ($registro['RECLAMANTE'] ?? ''));
+        $rotulo = $nome !== '' ? $nome : ('#' . $id);
+
+        $this->pericias->excluirPorCadastro($id);
+        $this->model->excluir($id);
+
+        Log::registrar(
+            'cadastro_excluir',
+            'Excluiu cadastro #' . $id . ' - ' . $rotulo,
+            'cadastro',
+            '#' . $id,
+            ['reclamante' => $nome]
+        );
+
+        $this->responder([
+            'sucesso' => true,
+            'id'      => $id,
         ]);
 
     }
