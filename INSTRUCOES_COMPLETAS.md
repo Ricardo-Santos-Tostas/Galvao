@@ -253,7 +253,7 @@ Salva todo dia na pasta:
 instalar_backup_cliente.bat
 ```
 
-3. Pronto — backup **todo dia às 23:00**
+3. Pronto — backup **todo dia às 18:00**
 
 #### O que é salvo
 
@@ -283,7 +283,7 @@ C:\xampp\htdocs\advocacia\backup_banco_area_trabalho.bat
 
 #### Importante
 
-- O **MySQL precisa estar ligado** no horário do backup (23:00)
+- O **MySQL precisa estar ligado** no horário do backup (18:00)
 - Se o PC desliga à noite, altere o horário no **Agendador de Tarefas** do Windows:
   - Procure a tarefa: **Advocacia Backup Area de Trabalho**
   - Mude para um horário antes de desligar (ex.: 18:00)

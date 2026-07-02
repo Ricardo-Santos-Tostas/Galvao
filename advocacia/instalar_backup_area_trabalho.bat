@@ -5,7 +5,7 @@ echo  BACKUP DIARIO - Area de Trabalho
 echo ============================================
 echo.
 echo Salva o banco em: Area de Trabalho\backup-banco
-echo Horario: todos os dias as 23:00
+echo Horario: todos os dias as 18:00
 echo Mantem os ultimos 30 dias.
 echo.
 echo IMPORTANTE: o MySQL do XAMPP precisa estar ligado
@@ -31,7 +31,7 @@ schtasks /create ^
     /tn "%TAREFA%" ^
     /tr "\"%SCRIPT%\" silent" ^
     /sc daily ^
-    /st 23:00 ^
+    /st 18:00 ^
     /rl LIMITED ^
     /f
 
@@ -51,7 +51,7 @@ echo ============================================
 echo  BACKUP AUTOMATICO INSTALADO
 echo ============================================
 echo  Tarefa: %TAREFA%
-echo  Horario: todos os dias as 23:00
+echo  Horario: todos os dias as 18:00
 echo  Pasta: %DESKTOP%\backup-banco
 echo.
 echo Para testar agora:

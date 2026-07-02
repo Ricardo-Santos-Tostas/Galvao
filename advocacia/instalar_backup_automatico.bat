@@ -4,7 +4,7 @@ echo ============================================
 echo  INSTALAR BACKUP AUTOMATICO DO BANCO
 echo ============================================
 echo.
-echo Agenda backup diario do MySQL as 23:00.
+echo Agenda backup diario do MySQL as 18:00.
 echo Os arquivos ficam em: sql\backups\
 echo Mantem os ultimos 30 dias.
 echo.
@@ -28,7 +28,7 @@ schtasks /create ^
     /tn "%TAREFA%" ^
     /tr "\"%SCRIPT%\" silent" ^
     /sc daily ^
-    /st 23:00 ^
+    /st 18:00 ^
     /rl LIMITED ^
     /f
 
@@ -45,7 +45,7 @@ echo ============================================
 echo  BACKUP AUTOMATICO INSTALADO
 echo ============================================
 echo  Tarefa: %TAREFA%
-echo  Horario: todos os dias as 23:00
+echo  Horario: todos os dias as 18:00
 echo  Script: %SCRIPT%
 echo.
 echo Para testar agora, execute:
