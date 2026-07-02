@@ -69,34 +69,30 @@ $estilosExtras = $estilosExtras ?? '';
     .imp-cabecalho-marca {
         display: flex;
         align-items: center;
-        gap: 6px;
+        gap: 8px;
         min-width: 0;
         flex: 1;
     }
-    .imp-cabecalho-logo-marca {
+    .imp-cabecalho-logo {
+        width: 64px;
         height: 64px;
-        width: auto;
-        max-width: 65%;
         object-fit: contain;
         flex-shrink: 0;
     }
-    .imp-cabecalho-logo {
-        width: 58px;
-        height: 58px;
-        object-fit: contain;
-        flex-shrink: 0;
+    .imp-cabecalho-textos {
+        min-width: 0;
     }
     .imp-cabecalho-nome {
         font-family: 'Times New Roman', Times, serif;
-        font-size: 10pt;
+        font-size: 12pt;
         font-weight: bold;
         color: #1a3a5c;
         letter-spacing: 0.3px;
         line-height: 1.05;
     }
     .imp-cabecalho-sub {
-        margin-top: 1px;
-        font-size: 5.5pt;
+        margin-top: 2px;
+        font-size: 6.5pt;
         letter-spacing: 0.2px;
         color: #1a3a5c;
         text-transform: uppercase;
@@ -200,11 +196,11 @@ $estilosExtras = $estilosExtras ?? '';
             padding-top: 2px;
         }
 
-        .imp-cabecalho-logo,
-        .imp-cabecalho-logo-marca {
+        .imp-cabecalho-logo {
             -webkit-print-color-adjust: exact;
             print-color-adjust: exact;
         }
+        .imp-cabecalho-nome,
         .imp-cabecalho-sub,
         .imp-socios,
         .imp-socios em {
