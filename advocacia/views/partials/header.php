@@ -15,7 +15,7 @@ $usuarioHeader = Auth::usuario();
 <header class="site-header">
     <div class="header-inner">
         <a href="index.php" class="brand">
-            <img src="assets/img/logo.png" alt="Moura Galvão Advogados" class="brand-logo<?= ($pagina_atual ?? '') === 'menu' ? ' brand-logo-lg' : '' ?>">
+            <img src="assets/img/logo.png" alt="Moura Galvão Advogados" width="1138" height="1096" decoding="async" class="brand-logo<?= ($pagina_atual ?? '') === 'menu' ? ' brand-logo-lg' : '' ?>">
             <div class="brand-text<?= ($pagina_atual ?? '') === 'menu' ? ' brand-text-lg' : '' ?>">
                 <span class="brand-name">Moura Galvão</span>
                 <span class="brand-sub">Advogados Associados</span>

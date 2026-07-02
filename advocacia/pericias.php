@@ -64,7 +64,7 @@ if ($dataInicio && $dataFim) {
 <body class="relatorio page-pericias">
     <div class="relatorio-container">
         <header class="relatorio-header">
-            <img src="assets/img/logo.png" alt="Moura Galvão" class="relatorio-logo">
+            <img src="assets/img/logo.png" alt="Moura Galvão" width="1138" height="1096" decoding="async" class="relatorio-logo">
             <div class="relatorio-header-text">
                 <h1>Moura Galvão Advogados Associados</h1>
                 <h2>Perícias</h2>
