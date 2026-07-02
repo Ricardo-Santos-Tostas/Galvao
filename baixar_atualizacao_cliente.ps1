@@ -151,7 +151,7 @@ if (Test-Path $syncFile) {
         & $phpExe $corrigirTel
     }
 } else {
-    Write-Host "  [AVISO] import\dados_servidor.csv nao encontrado — apenas codigo atualizado."
+    Write-Host '  [AVISO] import\dados_servidor.csv nao encontrado - apenas codigo atualizado.'
 }
 
 Write-Step "5/5 Reiniciando Apache e verificando"
