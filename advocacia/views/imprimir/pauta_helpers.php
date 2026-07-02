@@ -44,7 +44,7 @@ function pautaFormatarDataPorExtenso(?string $data): string
     $diaSemana = $dias[$dt->format('l')] ?? $dt->format('l');
     $mes = $meses[(int) $dt->format('n')] ?? $dt->format('F');
 
-    return $diaSemana . ', ' . (int) $dt->format('j') . ' de ' . $mes . ' de ' . $dt->format('Y');
+    return mb_strtolower($diaSemana, 'UTF-8') . ', ' . (int) $dt->format('j') . ' de ' . $mes . ' de ' . $dt->format('Y') . '.';
 }
 
 function pautaChaveData(?string $data): string
@@ -105,10 +105,10 @@ function pautaFormatarHora(?string $hora): string
     }
 
     if (preg_match('/^(\d{1,2}):(\d{2})/', $texto, $m)) {
-        return (int) $m[1] . ':' . $m[2] . ' hs';
+        return (int) $m[1] . ':' . $m[2] . ' hs:';
     }
 
-    return $texto . ' hs';
+    return $texto . ' hs:';
 }
 
 function pautaTextoMaiusculo(?string $valor): string

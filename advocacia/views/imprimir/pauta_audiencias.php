@@ -1,145 +1,154 @@
 <?php
 /** @var array $gruposPorData */
-?>
-<!DOCTYPE html>
-<html lang="pt-BR">
-<head>
-    <meta charset="UTF-8">
-    <title>Audiências · Impressão</title>
-    <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-        body {
-            font-family: Arial, Helvetica, sans-serif;
-            font-size: 11pt;
-            color: #000;
-            background: #fff;
-            padding: 14mm 16mm;
-        }
-        .botoes { margin-bottom: 16px; }
-        .botoes button {
-            font-size: 10pt;
-            padding: 6px 14px;
-            margin-right: 8px;
-            cursor: pointer;
-        }
-        .pauta-bloco { margin-bottom: 28px; }
-        .pauta-bloco:last-child { margin-bottom: 0; }
-        .pauta-titulo {
-            text-align: center;
-            font-family: 'Times New Roman', Times, serif;
-            font-size: 22pt;
-            font-weight: bold;
-            letter-spacing: 1px;
-            text-transform: uppercase;
-            margin-bottom: 10px;
-        }
-        .pauta-data {
-            text-align: center;
-            font-size: 11pt;
-            margin-bottom: 14px;
-        }
-        .pauta-linha-grossa {
-            border: none;
-            border-top: 3px solid #000;
-            margin: 0 0 0 0;
-        }
-        .pauta-item {
-            display: flex;
-            align-items: flex-start;
-            gap: 14px;
-            padding: 14px 0;
-            border-bottom: 1px solid #000;
-        }
-        .pauta-item:last-child { border-bottom: 1px solid #000; }
-        .pauta-foto {
-            width: 54px;
-            height: 68px;
-            flex-shrink: 0;
-            border: 1px solid #999;
-            background: #f5f5f5;
-            overflow: hidden;
-        }
+
+$tituloPagina = 'Audiências · Impressão';
+$dicaImpressao = 'Preencha as observações antes de imprimir. Na janela de impressão, desmarque <strong>Cabeçalhos e rodapés</strong> do navegador.';
+$estilosExtras = <<<'CSS'
+    .pauta-bloco { margin-bottom: 10px; }
+    .pauta-bloco:last-child { margin-bottom: 0; }
+    .pauta-item {
+        display: flex;
+        align-items: flex-start;
+        gap: 6px;
+        padding: 3px 0;
+        border-bottom: 1px solid #000;
+        font-size: 6.5pt;
+        line-height: 1.15;
+        break-inside: avoid;
+        page-break-inside: avoid;
+    }
+    .pauta-foto {
+        width: 34px;
+        height: 42px;
+        flex-shrink: 0;
+        border: 1px solid #999;
+        background: #f5f5f5;
+        overflow: hidden;
+    }
+    .pauta-foto img {
+        display: block;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+    .pauta-item-esq { flex: 1; min-width: 0; }
+    .pauta-item-linha { display: block; margin-top: 0; }
+    .pauta-item-topo {
+        display: flex;
+        align-items: flex-start;
+        gap: 4px;
+        margin-bottom: 1px;
+    }
+    .pauta-check-box {
+        display: block;
+        width: 8px;
+        height: 8px;
+        border: 1px solid #000;
+        flex-shrink: 0;
+        margin-top: 0;
+    }
+    .pauta-processo { font-weight: bold; }
+    .pauta-obs {
+        flex: 0 0 140px;
+        width: 140px;
+        min-height: 38px;
+        border: 1px dashed #888;
+        border-radius: 1px;
+        padding: 2px 4px;
+        font-family: inherit;
+        font-size: 6.5pt;
+        line-height: 1.15;
+        resize: vertical;
+        background: #fffef5;
+    }
+    .pauta-obs:focus {
+        outline: 1px solid #c9a227;
+        border-color: #c9a227;
+        background: #fff;
+    }
+    .pauta-obs::placeholder { color: #999; font-size: 6pt; }
+    .pauta-bloco-titulo {
+        break-after: avoid;
+        page-break-after: avoid;
+    }
+    @media print {
         .pauta-foto img {
-            display: block;
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
         }
-        .pauta-esq {
-            width: 72px;
-            flex-shrink: 0;
-            line-height: 1.45;
-            font-size: 11pt;
+        .pauta-obs {
+            border: none;
+            background: transparent;
+            padding: 0;
+            resize: none;
+            overflow: visible;
+            min-height: 0;
+            flex: 0 0 130px;
+            width: 130px;
         }
-        .pauta-dir {
-            flex: 1;
-            line-height: 1.55;
-            font-size: 11pt;
-        }
-        .pauta-dir div + div { margin-top: 2px; }
-        .pauta-vazio {
-            text-align: center;
-            padding: 40px 20px;
-            color: #444;
-            line-height: 1.6;
-        }
-        @media print {
-            .botoes { display: none !important; }
-            body { padding: 0; }
-            .pauta-bloco { page-break-inside: avoid; }
-            .pauta-foto img {
-                -webkit-print-color-adjust: exact;
-                print-color-adjust: exact;
-            }
-        }
-        @page { size: A4 portrait; margin: 14mm 16mm; }
-    </style>
-</head>
-<body>
-    <div class="botoes">
-        <button type="button" onclick="window.print()">Imprimir</button>
-        <button type="button" onclick="window.close()">Fechar</button>
-    </div>
+    }
+CSS;
 
-    <?php if (empty($gruposPorData)): ?>
-    <p class="pauta-vazio">Nenhuma audiência encontrada para o período informado.</p>
-    <?php else: ?>
-        <?php foreach ($gruposPorData as $data => $itens): ?>
-        <section class="pauta-bloco">
-            <h1 class="pauta-titulo">Audiências</h1>
-            <p class="pauta-data"><?= htmlspecialchars(pautaFormatarDataPorExtenso($data)) ?></p>
-            <hr class="pauta-linha-grossa">
+include __DIR__ . '/layout_impressao_inicio.php';
+?>
 
-            <?php foreach ($itens as $reg): ?>
-            <article class="pauta-item">
-                <div class="pauta-foto">
-                    <?php if (!empty($reg['foto_url'])): ?>
-                    <img src="<?= htmlspecialchars($reg['foto_url']) ?>" alt="Foto do reclamante">
-                    <?php endif; ?>
+<?php if (empty($gruposPorData)): ?>
+<p class="imp-vazio">Nenhuma audiência encontrada para o período informado.</p>
+<?php else: ?>
+    <?php foreach ($gruposPorData as $data => $itens): ?>
+    <section class="pauta-bloco">
+        <div class="pauta-bloco-titulo">
+            <h1 class="imp-titulo">Audiências</h1>
+            <p class="imp-subtitulo"><?= htmlspecialchars(pautaFormatarDataPorExtenso($data)) ?></p>
+            <hr class="imp-linha-grossa">
+        </div>
+
+        <?php foreach ($itens as $reg): ?>
+        <article class="pauta-item">
+            <div class="pauta-foto">
+                <?php if (!empty($reg['foto_url'])): ?>
+                <img src="<?= htmlspecialchars($reg['foto_url']) ?>" alt="Foto do reclamante">
+                <?php endif; ?>
+            </div>
+            <div class="pauta-item-esq">
+                <div class="pauta-item-topo">
+                    <span class="pauta-check-box" aria-hidden="true"></span>
+                    <div>
+                        <?php if (pautaFormatarJunta($reg['JUNTA'] ?? '')): ?>
+                        <div class="pauta-item-linha"><?= htmlspecialchars(pautaFormatarJunta($reg['JUNTA'] ?? '')) ?></div>
+                        <?php endif; ?>
+                        <?php if (pautaFormatarHora($reg['HORA_AUD'] ?? '')): ?>
+                        <div class="pauta-item-linha"><?= htmlspecialchars(pautaFormatarHora($reg['HORA_AUD'] ?? '')) ?></div>
+                        <?php endif; ?>
+                    </div>
                 </div>
-                <div class="pauta-esq">
-                    <?php if (pautaFormatarJunta($reg['JUNTA'] ?? '')): ?>
-                    <div><?= htmlspecialchars(pautaFormatarJunta($reg['JUNTA'] ?? '')) ?></div>
-                    <?php endif; ?>
-                    <?php if (pautaFormatarHora($reg['HORA_AUD'] ?? '')): ?>
-                    <div><?= htmlspecialchars(pautaFormatarHora($reg['HORA_AUD'] ?? '')) ?></div>
-                    <?php endif; ?>
-                </div>
-                <div class="pauta-dir">
-                    <?php if (trim((string) ($reg['RECLAMANTE'] ?? '')) !== ''): ?>
-                    <div>Rte: <?= htmlspecialchars(pautaTextoMaiusculo($reg['RECLAMANTE'] ?? '')) ?></div>
-                    <?php endif; ?>
-                    <?php if (trim((string) ($reg['RECLAMADA'] ?? '')) !== ''): ?>
-                    <div>Rda: <?= htmlspecialchars(pautaTextoMaiusculo($reg['RECLAMADA'] ?? '')) ?></div>
-                    <?php endif; ?>
-                    <?php if (trim((string) ($reg['PROC'] ?? '')) !== ''): ?>
-                    <div>Processo: <?= htmlspecialchars(trim((string) ($reg['PROC'] ?? ''))) ?></div>
-                    <?php endif; ?>
-                </div>
-            </article>
-            <?php endforeach; ?>
-        </section>
+                <?php if (trim((string) ($reg['RECLAMANTE'] ?? '')) !== ''): ?>
+                <div class="pauta-item-linha">Rte: <?= htmlspecialchars(pautaTextoMaiusculo($reg['RECLAMANTE'] ?? '')) ?></div>
+                <?php endif; ?>
+                <?php if (trim((string) ($reg['RECLAMADA'] ?? '')) !== ''): ?>
+                <div class="pauta-item-linha">Rda: <?= htmlspecialchars(pautaTextoMaiusculo($reg['RECLAMADA'] ?? '')) ?></div>
+                <?php endif; ?>
+                <?php if (trim((string) ($reg['PROC'] ?? '')) !== ''): ?>
+                <div class="pauta-item-linha pauta-processo">Processo: <?= htmlspecialchars(trim((string) ($reg['PROC'] ?? ''))) ?></div>
+                <?php endif; ?>
+            </div>
+            <textarea class="pauta-obs" rows="3" spellcheck="false"
+                      placeholder="Ex.: INICIAL (audiencia17vtssa) (ZOOM)"></textarea>
+        </article>
         <?php endforeach; ?>
-    <?php endif; ?>
-</body>
-</html>
+    </section>
+    <?php endforeach; ?>
+<?php endif; ?>
+
+<script>
+    document.querySelectorAll('.pauta-obs').forEach((campo) => {
+        const ajustar = () => {
+            campo.style.height = 'auto';
+            campo.style.height = Math.max(38, campo.scrollHeight) + 'px';
+        };
+        ajustar();
+        campo.addEventListener('input', ajustar);
+    });
+</script>
+
+<?php include __DIR__ . '/layout_impressao_fim.php'; ?>

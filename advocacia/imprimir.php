@@ -142,85 +142,46 @@ function valorCelula(array $reg, string $col): string
 
     return $valor;
 }
+
+$tituloPagina = 'Imprimir · ' . $titulo;
+$dicaImpressao = 'Na janela de impressão, desmarque <strong>Cabeçalhos e rodapés</strong> do navegador.';
+$estilosExtras = <<<'CSS'
+    .imp-tabela tr {
+        break-inside: avoid;
+        page-break-inside: avoid;
+    }
+CSS;
+
+include __DIR__ . '/views/imprimir/layout_impressao_inicio.php';
 ?>
-<!DOCTYPE html>
-<html lang="pt-BR">
-<head>
-    <meta charset="UTF-8">
-    <title>Imprimir · <?= htmlspecialchars($titulo) ?></title>
-    <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-        body {
-            font-family: Arial, Helvetica, sans-serif;
-            font-size: 9pt;
-            color: #000;
-            background: #fff;
-            padding: 8mm;
-        }
-        .cabecalho { margin-bottom: 10px; border-bottom: 2px solid #1a2f4a; padding-bottom: 8px; }
-        .cabecalho h1 { font-size: 14pt; color: #1a2f4a; }
-        .cabecalho h2 { font-size: 11pt; font-weight: normal; margin-top: 2px; }
-        .cabecalho p { font-size: 8pt; color: #444; margin-top: 4px; }
-        table { width: 100%; border-collapse: collapse; table-layout: fixed; }
-        th, td {
-            border: 1px solid #666;
-            padding: 3px 4px;
-            vertical-align: top;
-            word-wrap: break-word;
-            overflow-wrap: break-word;
-        }
-        th {
-            background: #333;
-            color: #fff;
-            font-size: 7pt;
-            text-transform: uppercase;
-        }
-        td { font-size: 8pt; }
-        .vazio { padding: 16px; text-align: center; color: #666; }
-        .botoes { margin-bottom: 12px; }
-        .botoes button {
-            font-size: 10pt;
-            padding: 6px 14px;
-            margin-right: 8px;
-            cursor: pointer;
-        }
-        @media print { .botoes { display: none; } body { padding: 0; } }
-        @page { size: A4 landscape; margin: 8mm; }
-    </style>
-</head>
-<body>
-    <div class="botoes">
-        <button type="button" onclick="window.print()">Imprimir</button>
-        <button type="button" onclick="window.close()">Fechar</button>
-    </div>
 
-    <div class="cabecalho">
-        <h1>Moura Galvão Advogados Associados</h1>
-        <h2><?= htmlspecialchars($titulo) ?></h2>
-        <p><?= htmlspecialchars($periodoTexto) ?> · <?= count($registros) ?> registros · Emitido em <?= date('d/m/Y H:i') ?></p>
-    </div>
+<h1 class="imp-titulo"><?= htmlspecialchars($titulo) ?></h1>
+<p class="imp-meta">
+    <?= htmlspecialchars($periodoTexto) ?> · <?= count($registros) ?> registros · Emitido em <?= date('d/m/Y H:i') ?>
+</p>
+<hr class="imp-linha-grossa">
 
-    <?php if (empty($registros)): ?>
-    <p class="vazio">Nenhum registro para imprimir.</p>
-    <?php else: ?>
-    <table>
-        <thead>
-            <tr>
-                <?php foreach ($colunas as $col): ?>
-                <th><?= htmlspecialchars(rotuloColuna($col, $rotulos)) ?></th>
-                <?php endforeach; ?>
-            </tr>
-        </thead>
-        <tbody>
-            <?php foreach ($registros as $reg): ?>
-            <tr>
-                <?php foreach ($colunas as $col): ?>
-                <td><?= htmlspecialchars(valorCelula($reg, $col)) ?></td>
-                <?php endforeach; ?>
-            </tr>
+<?php if (empty($registros)): ?>
+<p class="imp-vazio">Nenhum registro para imprimir.</p>
+<?php else: ?>
+<table class="imp-tabela">
+    <thead>
+        <tr>
+            <?php foreach ($colunas as $col): ?>
+            <th><?= htmlspecialchars(rotuloColuna($col, $rotulos)) ?></th>
             <?php endforeach; ?>
-        </tbody>
-    </table>
-    <?php endif; ?>
-</body>
-</html>
+        </tr>
+    </thead>
+    <tbody>
+        <?php foreach ($registros as $reg): ?>
+        <tr>
+            <?php foreach ($colunas as $col): ?>
+            <td><?= htmlspecialchars(valorCelula($reg, $col)) ?></td>
+            <?php endforeach; ?>
+        </tr>
+        <?php endforeach; ?>
+    </tbody>
+</table>
+<?php endif; ?>
+
+<?php include __DIR__ . '/views/imprimir/layout_impressao_fim.php'; ?>

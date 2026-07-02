@@ -114,6 +114,37 @@ function normalizarChaveColuna(string $chave): string
     ];
 
     $lower = mb_strtolower($chave, 'UTF-8');
+    $lower = preg_replace('/\s+/', ' ', trim($lower)) ?? $lower;
+
+    // Colunas exportadas do Access .mdb (tabela PRINCIPAL)
+    $aliases = [
+        'fone_rte(2)' => 'fone_rte_2_',
+        'fone_rte(3)' => 'fone_rte_3_',
+        'fone_rte(4)' => 'fone_rte_4_',
+        'falar com fone(1)' => 'falar_com_fone_1_',
+        'falar com fone(2)' => 'falar_com_fone_2_',
+        'falar com fone(3)' => 'falar_com_fone_3_',
+        'falar com fone(4)' => 'falar_com_fone_4_',
+        'end-rda' => 'end_rda_1',
+    ];
+    if (isset($aliases[$lower])) {
+        $lower = $aliases[$lower];
+    }
+    if (preg_match('/^endere.o$/u', $lower)) {
+        $lower = 'endere_o';
+    }
+    if (preg_match('/^pra.a_dia$/u', $lower)) {
+        $lower = 'pra_a_dia';
+    }
+    if (preg_match('/^pra.a_hora$/u', $lower)) {
+        $lower = 'pra_a_hora';
+    }
+    if (preg_match('/^cxpra.a$/u', $lower)) {
+        $lower = 'cxpra_a';
+    }
+    if (preg_match('/^2.\s*reclamada$/u', $lower)) {
+        $lower = 'col_2__reclamada';
+    }
 
     if (isset($mapa[$lower])) {
         return $mapa[$lower];
