@@ -71,19 +71,6 @@ class PericiaModel
         return $row ? $this->formatarRegistro($row) : null;
     }
 
-    public function excluirPorCadastro(int $cadastro): void
-    {
-        if ($cadastro <= 0) {
-            return;
-        }
-
-        $sql = 'DELETE FROM ' . $this->tabela
-            . ' WHERE ' . sqlId('CADASTRO') . ' = :cadastro'
-            . " AND " . sqlId('ORIGEM') . " = 'cadastro'";
-        $stmt = $this->db->prepare($sql);
-        $stmt->execute(['cadastro' => $cadastro]);
-    }
-
     public function temDadosPericia(array $dados): bool
     {
         $campos = ['DATA_PERICIA', 'HORA_PERICIA', 'NOME_PERITO', 'ENDERECO'];
@@ -165,6 +152,17 @@ class PericiaModel
         $stmt->execute(['id' => $id]);
 
         return (bool) $stmt->fetchColumn();
+    }
+
+    public function excluirPorCadastro(int $cadastro): void
+    {
+        if ($cadastro <= 0) {
+            return;
+        }
+
+        $sql = 'DELETE FROM ' . $this->tabela . ' WHERE ' . sqlId('CADASTRO') . ' = :cadastro';
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute(['cadastro' => $cadastro]);
     }
 
     public function formatarRegistro(array $row): array

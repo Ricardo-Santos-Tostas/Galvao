@@ -124,8 +124,9 @@ const App = (() => {
 
             document.getElementById('inputDocumento')?.addEventListener('change', onDocumentoSelecionado);
 
-            document.getElementById('btnExcluirRegistro')?.addEventListener('click', excluirRegistro);
+            document.getElementById('btnExcluirDocumento')?.addEventListener('click', excluirDocumento);
             document.getElementById('btnExcluirDocumentoPainel')?.addEventListener('click', excluirDocumento);
+            document.getElementById('btnExcluirRegistro')?.addEventListener('click', excluirRegistro);
 
             initModalDuplicado();
 
@@ -889,6 +890,8 @@ const App = (() => {
 
         const link = document.getElementById('linkDocumento');
 
+        const btnExcluir = document.getElementById('btnExcluirDocumento');
+
         const btnExcluirPainel = document.getElementById('btnExcluirDocumentoPainel');
 
 
@@ -917,89 +920,35 @@ const App = (() => {
 
         }
 
+        if (btnExcluir) {
+            btnExcluir.disabled = !temDoc || somenteLeitura;
+            btnExcluir.title = temDoc
+                ? 'Remover o documento anexado deste cadastro'
+                : 'Nenhum documento anexado neste cadastro';
+        }
+
         if (btnExcluirPainel) {
             btnExcluirPainel.disabled = !temDoc || somenteLeitura;
         }
 
-        atualizarBtnExcluirRegistro();
+        atualizarBotaoExcluirRegistro();
 
     }
 
 
 
-    function atualizarBtnExcluirRegistro() {
+    function atualizarBotaoExcluirRegistro() {
 
         const btn = document.getElementById('btnExcluirRegistro');
-
         if (!btn) return;
 
-        const pode = idCarregado !== null && !somenteLeitura;
+        const id = obterIdCadastro();
+        const podeExcluir = !somenteLeitura && id && idCarregado === id;
 
-        btn.disabled = !pode;
-
-        btn.title = pode
-
-            ? 'Apagar este cadastro inteiro do banco de dados'
-
-            : 'Abra um cadastro salvo para excluir o registro';
-
-    }
-
-
-
-    async function excluirRegistro() {
-
-        const id = idCarregado;
-
-        if (!id) {
-
-            alert('Abra um cadastro salvo antes de excluir o registro.');
-
-            return;
-
-        }
-
-        const nome = document.getElementById('RECLAMANTE')?.value?.trim() || ('Cadastro #' + id);
-
-        if (!confirm('Excluir o cadastro #' + id + ' — ' + nome + '?\n\nTodo o registro sera apagado do banco de dados. Esta acao nao pode ser desfeita.')) {
-
-            return;
-
-        }
-
-        try {
-
-            const resp = await fetch(`${API_BASE}?acao=excluir_registro`, {
-
-                method: 'POST',
-
-                headers: { 'Content-Type': 'application/json' },
-
-                body: JSON.stringify({ id })
-
-            });
-
-            const data = await resp.json();
-
-            if (!data.sucesso) {
-
-                alert('Erro ao excluir registro: ' + (data.erro || 'Erro desconhecido'));
-
-                return;
-
-            }
-
-            alert('Cadastro excluido com sucesso.');
-
-            await novoRegistro();
-
-        } catch (err) {
-
-            alert('Erro ao excluir registro.');
-
-            console.error(err);
-
-        }
+        btn.disabled = !podeExcluir;
+        btn.title = podeExcluir
+            ? 'Apagar este cadastro permanentemente do banco de dados'
+            : 'Abra um cadastro salvo para excluir';
 
     }
 
@@ -1071,6 +1020,65 @@ const App = (() => {
 
 
 
+    async function excluirRegistro() {
+
+        const id = obterIdCadastro();
+
+        if (!id || idCarregado !== id) {
+
+            alert('Abra um cadastro salvo antes de excluir o registro.');
+
+            return;
+
+        }
+
+        const nome = document.getElementById('RECLAMANTE')?.value?.trim() || '';
+        const rotulo = nome !== '' ? nome : 'cadastro #' + id;
+
+        if (!confirm('Excluir permanentemente o registro #' + id + ' (' + rotulo + ')?\n\nEsta acao nao pode ser desfeita.')) {
+
+            return;
+
+        }
+
+        try {
+
+            const resp = await fetch(`${API_BASE}?acao=excluir_cadastro`, {
+
+                method: 'POST',
+
+                headers: { 'Content-Type': 'application/json' },
+
+                body: JSON.stringify({ id }),
+
+            });
+
+            const data = await resp.json();
+
+            if (!data.sucesso) {
+
+                alert('Erro ao excluir registro: ' + (data.erro || 'Erro desconhecido'));
+
+                return;
+
+            }
+
+            alert('Registro excluido com sucesso.');
+
+            await novoRegistro();
+
+        } catch (err) {
+
+            console.error(err);
+
+            alert('Erro ao excluir registro.');
+
+        }
+
+    }
+
+
+
     function onBuscaInput(e) {
 
         const termo = e.target.value;
@@ -1087,9 +1095,9 @@ const App = (() => {
 
             if (termo.trim().length === 0) {
 
-                limparCamposFormulario();
-
                 idCarregado = null;
+
+                limparCamposFormulario();
 
             }
 
@@ -1513,8 +1521,6 @@ const App = (() => {
 
         atualizarDocumento(registro);
 
-        atualizarBtnExcluirRegistro();
-
     }
 
 
@@ -1581,6 +1587,8 @@ const App = (() => {
 
         atualizarDocumento({ tem_documento: false });
 
+        atualizarBotaoExcluirRegistro();
+
     }
 
 
@@ -1590,8 +1598,6 @@ const App = (() => {
         limparCamposFormulario();
 
         idCarregado = null;
-
-        atualizarBtnExcluirRegistro();
 
 
 
@@ -1650,8 +1656,6 @@ const App = (() => {
                     idCarregado = data.id;
 
                 }
-
-                atualizarBtnExcluirRegistro();
 
             } else {
 

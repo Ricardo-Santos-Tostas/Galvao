@@ -1302,27 +1302,36 @@ body {
     background: #fef2f2;
 }
 
-.btn-excluir-registro[hidden],
 .btn-excluir-doc[hidden],
 .btn-documento-excluir[hidden] {
     display: none !important;
 }
 
-.btn-excluir-registro,
 .btn-excluir-doc {
     border-color: #b91c1c;
     color: #b91c1c;
 }
 
-.btn-excluir-registro:hover:not(:disabled),
+.btn-excluir-registro {
+    border-color: #b91c1c;
+    color: #b91c1c;
+    font-weight: 600;
+}
+
+.btn-excluir-registro:hover:not(:disabled) {
+    background: #fef2f2;
+    border-color: #991b1b;
+    color: #991b1b;
+}
+
 .btn-excluir-doc:hover:not(:disabled) {
     background: #fef2f2;
     border-color: #991b1b;
     color: #991b1b;
 }
 
-.btn-excluir-registro:disabled,
 .btn-excluir-doc:disabled,
+.btn-excluir-registro:disabled,
 .btn-documento-excluir:disabled {
     opacity: 0.45;
     cursor: not-allowed;

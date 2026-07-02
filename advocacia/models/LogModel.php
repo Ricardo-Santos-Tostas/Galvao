@@ -26,7 +26,7 @@ class LogModel
             'cadastro_foto'      => 'Foto importada',
             'cadastro_documento' => 'Documento importado',
             'cadastro_documento_excluir' => 'Documento excluído',
-            'cadastro_excluir'     => 'Cadastro excluído',
+            'cadastro_excluir'   => 'Cadastro excluído',
             'pericia_criar'      => 'Perícia criada',
             'pericia_editar'     => 'Perícia alterada',
             'usuario_criar'      => 'Usuário criado',

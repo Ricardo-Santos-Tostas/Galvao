@@ -107,9 +107,9 @@ class ApiController
 
                     break;
 
-                case 'excluir_registro':
+                case 'excluir_cadastro':
 
-                    $this->excluirRegistro();
+                    $this->excluirCadastro();
 
                     break;
 
@@ -609,7 +609,7 @@ class ApiController
 
 
 
-    private function excluirRegistro(): void
+    private function excluirCadastro(): void
 
     {
 
@@ -628,12 +628,12 @@ class ApiController
         }
 
         $registro = $this->model->buscarPorId($id);
-        if ($registro === null) {
+        if (!$registro) {
             $this->responder(['erro' => 'Cadastro não encontrado'], 404);
         }
 
         $nome = trim((string) ($registro['RECLAMANTE'] ?? ''));
-        $rotulo = $nome !== '' ? $nome : ('#' . $id);
+        $rotulo = $nome !== '' ? $nome : 'sem nome';
 
         $this->pericias->excluirPorCadastro($id);
         $this->model->excluir($id);
