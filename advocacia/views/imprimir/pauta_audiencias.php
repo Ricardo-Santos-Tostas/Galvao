@@ -2,10 +2,10 @@
 /** @var array $gruposPorData */
 
 $tituloPagina = 'Audiências · Impressão';
-$dicaImpressao = 'Preencha as observações antes de imprimir. Na janela de impressão, desmarque <strong>Cabeçalhos e rodapés</strong> do navegador.';
+$dicaImpressao = 'Preencha as observações antes de imprimir. Cada dia de audiência será impresso em uma folha separada. Na janela de impressão, desmarque <strong>Cabeçalhos e rodapés</strong> do navegador.';
 $estilosExtras = <<<'CSS'
-    .pauta-bloco { margin-bottom: 10px; }
-    .pauta-bloco:last-child { margin-bottom: 0; }
+    .pauta-dia-pagina { margin-bottom: 28px; }
+    .pauta-dia-pagina:last-child { margin-bottom: 0; }
     .pauta-item {
         display: flex;
         align-items: flex-start;
@@ -72,6 +72,14 @@ $estilosExtras = <<<'CSS'
         page-break-after: avoid;
     }
     @media print {
+        .pauta-dia-pagina {
+            break-after: page;
+            page-break-after: always;
+        }
+        .pauta-dia-pagina:last-child {
+            break-after: auto;
+            page-break-after: auto;
+        }
         .pauta-foto img {
             -webkit-print-color-adjust: exact;
             print-color-adjust: exact;
@@ -88,15 +96,39 @@ $estilosExtras = <<<'CSS'
         }
     }
 CSS;
-
-include __DIR__ . '/layout_impressao_inicio.php';
 ?>
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <title><?= htmlspecialchars($tituloPagina) ?></title>
+    <?php include __DIR__ . '/estilos_impressao.php'; ?>
+</head>
+<body>
+    <div class="botoes">
+        <button type="button" onclick="window.print()">Imprimir</button>
+        <button type="button" onclick="window.close()">Fechar</button>
+        <?php if ($dicaImpressao !== ''): ?>
+        <p class="botoes-dica"><?= $dicaImpressao ?></p>
+        <?php endif; ?>
+    </div>
 
 <?php if (empty($gruposPorData)): ?>
-<p class="imp-vazio">Nenhuma audiência encontrada para o período informado.</p>
+    <?php
+    $classesExtras = '';
+    ob_start();
+    ?>
+    <p class="imp-vazio">Nenhuma audiência encontrada para o período informado.</p>
+    <?php
+    $conteudoTabela = ob_get_clean();
+    include __DIR__ . '/tabela_impressao.php';
+    ?>
 <?php else: ?>
     <?php foreach ($gruposPorData as $data => $itens): ?>
-    <section class="pauta-bloco">
+        <?php
+        $classesExtras = 'pauta-dia-pagina';
+        ob_start();
+        ?>
         <div class="pauta-bloco-titulo">
             <h1 class="imp-titulo">Audiências</h1>
             <p class="imp-subtitulo"><?= htmlspecialchars(pautaFormatarDataPorExtenso($data)) ?></p>
@@ -136,7 +168,10 @@ include __DIR__ . '/layout_impressao_inicio.php';
                       placeholder="Ex.: INICIAL (audiencia17vtssa) (ZOOM)"></textarea>
         </article>
         <?php endforeach; ?>
-    </section>
+        <?php
+        $conteudoTabela = ob_get_clean();
+        include __DIR__ . '/tabela_impressao.php';
+        ?>
     <?php endforeach; ?>
 <?php endif; ?>
 
@@ -150,5 +185,5 @@ include __DIR__ . '/layout_impressao_inicio.php';
         campo.addEventListener('input', ajustar);
     });
 </script>
-
-<?php include __DIR__ . '/layout_impressao_fim.php'; ?>
+</body>
+</html>
