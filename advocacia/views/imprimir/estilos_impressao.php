@@ -54,6 +54,7 @@ $estilosExtras = $estilosExtras ?? '';
     }
     .imp-layout-rodape {
         padding-top: 4px;
+        vertical-align: bottom;
     }
     .imp-layout-rodape .imp-rodape {
         margin-top: 0;
@@ -108,8 +109,8 @@ $estilosExtras = $estilosExtras ?? '';
         text-align: center;
     }
     .imp-rodape-linha {
-        font-size: 6pt;
-        line-height: 1.2;
+        font-size: 7pt;
+        line-height: 1.25;
         color: #1a3a5c;
     }
     .imp-rodape-linha + .imp-rodape-linha { margin-top: 1px; }

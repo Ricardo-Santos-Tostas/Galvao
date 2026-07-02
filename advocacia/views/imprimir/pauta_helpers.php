@@ -116,6 +116,24 @@ function pautaTextoMaiusculo(?string $valor): string
     return mb_strtoupper(trim((string) $valor), 'UTF-8');
 }
 
+function pautaClasseArea(?string $area): string
+{
+    $valor = mb_strtolower(trim((string) $area), 'UTF-8');
+    if ($valor === '') {
+        return 'pauta-area-trabalhista';
+    }
+
+    if (str_contains($valor, 'consumidor')) {
+        return 'pauta-area-consumidor';
+    }
+
+    if (str_contains($valor, 'previdenci')) {
+        return 'pauta-area-previdenciario';
+    }
+
+    return 'pauta-area-trabalhista';
+}
+
 function pautaEnriquecerComFotos(ProcessoModel $model, array $grupos): array
 {
     $ids = [];

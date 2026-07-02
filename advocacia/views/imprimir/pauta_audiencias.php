@@ -4,22 +4,29 @@
 $tituloPagina = 'Audiências · Impressão';
 $dicaImpressao = 'Preencha as observações antes de imprimir. Cada dia de audiência será impresso em uma folha separada. Na janela de impressão, desmarque <strong>Cabeçalhos e rodapés</strong> do navegador.';
 $estilosExtras = <<<'CSS'
-    .pauta-dia-pagina { margin-bottom: 28px; }
+    .pauta-dia-pagina {
+        margin-bottom: 28px;
+        min-height: calc(100vh - 16mm);
+    }
     .pauta-dia-pagina:last-child { margin-bottom: 0; }
+    .pauta-dia-pagina tbody tr { height: 100%; }
     .pauta-item {
         display: flex;
         align-items: flex-start;
-        gap: 6px;
-        padding: 3px 0;
-        border-bottom: 1px solid #000;
-        font-size: 6.5pt;
-        line-height: 1.15;
+        gap: 7px;
+        padding: 4px 0;
+        border-bottom: 1px solid currentColor;
+        font-size: 8pt;
+        line-height: 1.2;
         break-inside: avoid;
         page-break-inside: avoid;
     }
+    .pauta-area-trabalhista { color: #000; }
+    .pauta-area-consumidor { color: #0033A0; }
+    .pauta-area-previdenciario { color: #C9A000; }
     .pauta-foto {
-        width: 34px;
-        height: 42px;
+        width: 40px;
+        height: 48px;
         flex-shrink: 0;
         border: 1px solid #999;
         background: #f5f5f5;
@@ -36,28 +43,29 @@ $estilosExtras = <<<'CSS'
     .pauta-item-topo {
         display: flex;
         align-items: flex-start;
-        gap: 4px;
+        gap: 5px;
         margin-bottom: 1px;
     }
     .pauta-check-box {
         display: block;
-        width: 8px;
-        height: 8px;
-        border: 1px solid #000;
+        width: 10px;
+        height: 10px;
+        border: 1px solid currentColor;
         flex-shrink: 0;
-        margin-top: 0;
+        margin-top: 1px;
     }
     .pauta-processo { font-weight: bold; }
     .pauta-obs {
-        flex: 0 0 140px;
-        width: 140px;
-        min-height: 38px;
+        flex: 0 0 150px;
+        width: 150px;
+        min-height: 44px;
         border: 1px dashed #888;
         border-radius: 1px;
         padding: 2px 4px;
         font-family: inherit;
-        font-size: 6.5pt;
-        line-height: 1.15;
+        font-size: 8pt;
+        line-height: 1.2;
+        color: #000;
         resize: vertical;
         background: #fffef5;
     }
@@ -66,19 +74,29 @@ $estilosExtras = <<<'CSS'
         border-color: #c9a227;
         background: #fff;
     }
-    .pauta-obs::placeholder { color: #999; font-size: 6pt; }
+    .pauta-obs::placeholder { color: #999; font-size: 7pt; }
     .pauta-bloco-titulo {
         break-after: avoid;
         page-break-after: avoid;
     }
+    .pauta-dia-pagina .imp-subtitulo { font-size: 8pt; }
     @media print {
         .pauta-dia-pagina {
+            height: 281mm;
+            min-height: 281mm;
             break-after: page;
             page-break-after: always;
         }
         .pauta-dia-pagina:last-child {
             break-after: auto;
             page-break-after: auto;
+        }
+        .pauta-dia-pagina tbody tr { height: 100%; }
+        .pauta-area-trabalhista,
+        .pauta-area-consumidor,
+        .pauta-area-previdenciario {
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
         }
         .pauta-foto img {
             -webkit-print-color-adjust: exact;
@@ -91,8 +109,9 @@ $estilosExtras = <<<'CSS'
             resize: none;
             overflow: visible;
             min-height: 0;
-            flex: 0 0 130px;
-            width: 130px;
+            flex: 0 0 140px;
+            width: 140px;
+            color: #000;
         }
     }
 CSS;
@@ -136,7 +155,7 @@ CSS;
         </div>
 
         <?php foreach ($itens as $reg): ?>
-        <article class="pauta-item">
+        <article class="pauta-item <?= htmlspecialchars(pautaClasseArea($reg['AREA'] ?? '')) ?>">
             <div class="pauta-foto">
                 <?php if (!empty($reg['foto_url'])): ?>
                 <img src="<?= htmlspecialchars($reg['foto_url']) ?>" alt="Foto do reclamante">
@@ -179,7 +198,7 @@ CSS;
     document.querySelectorAll('.pauta-obs').forEach((campo) => {
         const ajustar = () => {
             campo.style.height = 'auto';
-            campo.style.height = Math.max(38, campo.scrollHeight) + 'px';
+            campo.style.height = Math.max(44, campo.scrollHeight) + 'px';
         };
         ajustar();
         campo.addEventListener('input', ajustar);
