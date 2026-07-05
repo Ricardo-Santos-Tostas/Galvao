@@ -1,0 +1,6 @@
+Pasta de relatórios — processos não encontrados na importação da pauta trabalhista.
+
+Após cada importação com processos ausentes no cadastro, um arquivo Excel (.xlsx) é gerado aqui
+com as colunas: Data, Hora, Nº Processo, Reclamante e Reclamado.
+
+O sistema também oferece o download automático do relatório na tela de importação.

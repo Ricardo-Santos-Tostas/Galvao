@@ -789,4 +789,147 @@ class ProcessoModel
 
         return $texto;
     }
+
+    /** @return list<array{CADASTRO: int, PROC: ?string}> */
+    public function listarProcessosParaIndice(): array
+    {
+        $sql = 'SELECT ' . sqlId('CADASTRO') . ', ' . sqlId('PROC')
+            . ' FROM ' . $this->tabela
+            . ' WHERE ' . sqlId('PROC') . ' IS NOT NULL AND TRIM(' . sqlId('PROC') . ") != ''";
+
+        $rows = $this->db->query($sql)->fetchAll();
+
+        return array_map(static function (array $row): array {
+            return [
+                'CADASTRO' => (int) $row['CADASTRO'],
+                'PROC'     => $row['PROC'] ?? null,
+            ];
+        }, $rows);
+    }
+
+    public function atualizarPautaTrabalhista(
+        int $id,
+        string $diaAud,
+        string $horaAud,
+        string $mensagem,
+        ?string $procAbrev = null
+    ): void {
+        $registro = $this->buscarPorId($id);
+        $andamentoAtual = trim((string) ($registro['ANDAMENTO'] ?? ''));
+        $linhaAudiencia = self::linhaAndamentoAudiencia($diaAud, $horaAud, $mensagem);
+
+        if ($linhaAudiencia !== '' && !self::andamentoContemAudiencia($andamentoAtual, $diaAud, $horaAud)) {
+            $andamentoAtual = $andamentoAtual === ''
+                ? $linhaAudiencia
+                : rtrim($andamentoAtual) . "\n" . $linhaAudiencia;
+        }
+
+        $sets = [
+            sqlId('DIA_AUD') . ' = :dia',
+            sqlId('HORA_AUD') . ' = :hora',
+            sqlId('cxpra_a') . ' = :obs',
+            sqlId('ANDAMENTO') . ' = :andamento',
+            sqlId('AREA') . ' = :area',
+        ];
+        $params = [
+            'id'        => $id,
+            'dia'       => $diaAud,
+            'hora'      => $horaAud,
+            'obs'       => mb_substr(trim($mensagem), 0, 100),
+            'andamento' => $andamentoAtual,
+            'area'      => 'trabalhista',
+        ];
+
+        if ($procAbrev !== null && $procAbrev !== '') {
+            $sets[] = sqlId('PROC') . ' = :proc';
+            $params['proc'] = $procAbrev;
+        }
+
+        $sql = 'UPDATE ' . $this->tabela . ' SET ' . implode(', ', $sets)
+            . ' WHERE ' . sqlId('CADASTRO') . ' = :id';
+
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute($params);
+    }
+
+    public function salvarObservacoesPauta(array $observacoes): int
+    {
+        $salvos = 0;
+
+        foreach ($observacoes as $item) {
+            if (!is_array($item)) {
+                continue;
+            }
+
+            $id = (int) ($item['id'] ?? 0);
+            if ($id <= 0 || !$this->registroExiste($id)) {
+                continue;
+            }
+
+            $texto = mb_substr(trim((string) ($item['texto'] ?? '')), 0, 100);
+            $sql = 'UPDATE ' . $this->tabela . ' SET ' . sqlId('cxpra_a') . ' = :obs'
+                . ' WHERE ' . sqlId('CADASTRO') . ' = :id';
+            $stmt = $this->db->prepare($sql);
+            $stmt->execute(['id' => $id, 'obs' => $texto]);
+            $salvos++;
+        }
+
+        return $salvos;
+    }
+
+    public static function linhaAndamentoAudiencia(string $diaAud, string $horaAud, string $mensagem = ''): string
+    {
+        $diaAud = trim($diaAud);
+        $horaAud = trim($horaAud);
+        if ($diaAud === '' || $horaAud === '') {
+            return '';
+        }
+
+        $horaFmt = self::formatarHoraAndamento($horaAud);
+        $hoje = date('d/m/Y');
+        $tipo = trim($mensagem);
+
+        if ($tipo !== '') {
+            $tipo = mb_strtoupper($tipo, 'UTF-8');
+            if (!preg_match('/^AUDIENCIA\b/u', $tipo)) {
+                $tipo = 'AUDIENCIA ' . $tipo;
+            }
+
+            return "{$hoje} - {$tipo} AGENDADA PARA {$diaAud}, AS {$horaFmt}.";
+        }
+
+        return "{$hoje} - AUDIENCIA AGENDADA PARA {$diaAud}, AS {$horaFmt}.";
+    }
+
+    public static function andamentoContemAudiencia(string $andamento, string $diaAud, string $horaAud): bool
+    {
+        $andamento = trim($andamento);
+        if ($andamento === '') {
+            return false;
+        }
+
+        $horaFmt = self::formatarHoraAndamento($horaAud);
+        $marcadores = [
+            "AGENDADA PARA {$diaAud}, AS {$horaFmt}",
+            "ADIADA PARA {$diaAud}, AS {$horaFmt}",
+            "PARA {$diaAud}, AS {$horaFmt}",
+        ];
+
+        foreach ($marcadores as $marcador) {
+            if (str_contains($andamento, $marcador)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private static function formatarHoraAndamento(string $hora): string
+    {
+        if (preg_match('/^(\d{1,2}):(\d{2})/', trim($hora), $m)) {
+            return sprintf('%02d:%02d', (int) $m[1], (int) $m[2]);
+        }
+
+        return trim($hora);
+    }
 }

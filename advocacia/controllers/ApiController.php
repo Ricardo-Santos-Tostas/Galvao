@@ -9,6 +9,8 @@
 
 
 require_once __DIR__ . '/../models/ProcessoModel.php';
+require_once __DIR__ . '/../models/ImportadorPautaTrabalhista.php';
+require_once __DIR__ . '/../models/RelatorioPautaNaoEncontrados.php';
 require_once __DIR__ . '/../models/PericiaModel.php';
 require_once __DIR__ . '/../models/UsuarioModel.php';
 require_once __DIR__ . '/../models/LogModel.php';
@@ -47,7 +49,7 @@ class ApiController
 
 
 
-        if (!in_array($acao, ['upload_foto', 'upload_documento'], true)) {
+        if (!in_array($acao, ['upload_foto', 'upload_documento', 'baixar_relatorio_pauta'], true)) {
 
             header('Content-Type: application/json; charset=utf-8');
 
@@ -134,6 +136,24 @@ class ApiController
                 case 'usuario_excluir':
 
                     $this->usuarioExcluir();
+
+                    break;
+
+                case 'importar_pauta_trabalhista':
+
+                    $this->importarPautaTrabalhista();
+
+                    break;
+
+                case 'salvar_observacoes_pauta':
+
+                    $this->salvarObservacoesPauta();
+
+                    break;
+
+                case 'baixar_relatorio_pauta':
+
+                    $this->baixarRelatorioPauta();
 
                     break;
 
@@ -877,6 +897,106 @@ class ApiController
             $this->responder(['erro' => 'Sem permissão'], 403);
         }
 
+    }
+
+
+
+    private function importarPautaTrabalhista(): void
+    {
+        if (!Auth::podeEditar('cadastro')) {
+            $this->responder(['erro' => 'Sem permissão para importar audiências'], 403);
+        }
+
+        if (empty($_FILES['arquivo']['tmp_name'])) {
+            $this->responder(['erro' => 'Selecione um arquivo Excel (.xlsx)'], 400);
+        }
+
+        $file = $_FILES['arquivo'];
+        if ($file['error'] !== UPLOAD_ERR_OK) {
+            $this->responder(['erro' => 'Falha no envio do arquivo'], 400);
+        }
+
+        $nome = strtolower($file['name'] ?? '');
+        if (!str_ends_with($nome, '.xlsx')) {
+            $this->responder(['erro' => 'Envie um arquivo Excel no formato .xlsx'], 400);
+        }
+
+        if ($file['size'] > 15 * 1024 * 1024) {
+            $this->responder(['erro' => 'Arquivo muito grande (máx. 15 MB)'], 400);
+        }
+
+        $tmp = $file['tmp_name'];
+        $importador = new ImportadorPautaTrabalhista($this->model);
+        $resultado = $importador->importarArquivo($tmp);
+
+        $qtd = (int) ($resultado['atualizados'] ?? 0);
+        $naoEncontrados = $resultado['nao_encontrados'] ?? [];
+
+        Log::registrar(
+            'pauta_importar',
+            'Importou pauta trabalhista — ' . $qtd . ' registro(s) atualizado(s)',
+            'cadastro',
+            null,
+            [
+                'atualizados'     => $qtd,
+                'nao_encontrados' => count($naoEncontrados),
+            ]
+        );
+
+        $this->responder($resultado);
+    }
+
+
+
+    private function salvarObservacoesPauta(): void
+    {
+        if (!Auth::podeEditar('cadastro')) {
+            $this->responder(['erro' => 'Sem permissão para salvar observações'], 403);
+        }
+
+        $dados = json_decode(file_get_contents('php://input'), true);
+        if (!is_array($dados)) {
+            $this->responder(['erro' => 'Dados inválidos'], 400);
+        }
+
+        $lista = $dados['observacoes'] ?? [];
+        if (!is_array($lista) || $lista === []) {
+            $this->responder(['erro' => 'Nenhuma observação enviada'], 400);
+        }
+
+        $salvos = $this->model->salvarObservacoesPauta($lista);
+
+        Log::registrar(
+            'pauta_obs_salvar',
+            'Salvou observações da pauta — ' . $salvos . ' registro(s)',
+            'cadastro'
+        );
+
+        $this->responder([
+            'sucesso' => true,
+            'salvos'  => $salvos,
+        ]);
+    }
+
+
+
+    private function baixarRelatorioPauta(): void
+    {
+        if (!Auth::podeEditar('cadastro')) {
+            $this->responder(['erro' => 'Sem permissão'], 403);
+        }
+
+        $arquivo = trim((string) ($_GET['arquivo'] ?? ''));
+        $caminho = RelatorioPautaNaoEncontrados::caminhoSeguro($arquivo);
+        if ($caminho === null) {
+            $this->responder(['erro' => 'Relatório não encontrado'], 404);
+        }
+
+        header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+        header('Content-Disposition: attachment; filename="' . basename($caminho) . '"');
+        header('Content-Length: ' . (string) filesize($caminho));
+        readfile($caminho);
+        exit;
     }
 
 

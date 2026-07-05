@@ -68,7 +68,7 @@ Write-Host ""
 Write-Host "============================================" -ForegroundColor Yellow
 Write-Host " ATUALIZAR SISTEMA - Moura Galvao" -ForegroundColor Yellow
 Write-Host "============================================" -ForegroundColor Yellow
-Write-Host "Atualiza codigo e sincroniza cadastros (fotos/documentos do cliente preservados)."
+Write-Host "Atualiza codigo e estrutura do banco (tabelas/colunas). Dados do cliente preservados."
 Write-Host ""
 
 if (-not (Test-Path (Join-Path $repoPath ".git"))) {
@@ -83,7 +83,7 @@ if (-not (Test-Path $mysqlExe)) {
     throw "MySQL nao encontrado em '$mysqlExe'. Verifique o XAMPP."
 }
 
-Write-Step "1/5 Baixando codigo do GitHub"
+Write-Step "1/4 Baixando codigo do GitHub"
 Push-Location $repoPath
 & git pull --ff-only
 if ($LASTEXITCODE -ne 0) { throw "Falha no git pull. Verifique internet e login no GitHub." }
@@ -93,7 +93,7 @@ if (-not (Test-Path $sourceApp)) {
     throw "Pasta '$sourceApp' nao encontrada apos o download."
 }
 
-Write-Step "2/5 Copiando codigo para o XAMPP"
+Write-Step "2/4 Copiando codigo para o XAMPP"
 if (Test-Path (Join-Path $targetApp "config\config.local.php")) {
     $configBackup = Join-Path $env:TEMP "advocacia_config.local.php.bak"
     Copy-Item (Join-Path $targetApp "config\config.local.php") $configBackup -Force
@@ -111,7 +111,7 @@ if ($configBackup -and (Test-Path $configBackup)) {
     Remove-Item $configBackup -Force
 }
 
-Write-Step "3/5 Aplicando migracoes complementares"
+Write-Step "3/4 Aplicando migracoes (tabelas e colunas)"
 & $mysqlExe -u root --connect-timeout=10 -e "SELECT 1" | Out-Null
 if ($LASTEXITCODE -ne 0) {
     throw "MySQL nao esta rodando. Ligue o MySQL no painel do XAMPP."
@@ -135,26 +135,7 @@ foreach ($script in $migrations) {
     }
 }
 
-Write-Step "4/5 Sincronizando cadastros (sem apagar fotos/documentos)"
-$syncFile = Join-Path $targetApp "import\dados_servidor.csv"
-if (Test-Path $syncFile) {
-    $syncScript = Join-Path $targetApp "scripts\sincronizar_planilha.php"
-    Write-Host "  Arquivo: $syncFile"
-    Write-Host "  Atualiza existentes e insere novos. Preserva anexos locais."
-    & $phpExe $syncScript --fonte=csv --arquivo=import/dados_servidor.csv --confirmar
-    if ($LASTEXITCODE -ne 0) {
-        throw "Falha ao sincronizar dados_servidor.csv"
-    }
-    $corrigirTel = Join-Path $targetApp "scripts\corrigir_telefones.php"
-    if (Test-Path $corrigirTel) {
-        Write-Host "  corrigir_telefones.php"
-        & $phpExe $corrigirTel
-    }
-} else {
-    Write-Host '  [AVISO] import\dados_servidor.csv nao encontrado - apenas codigo atualizado.'
-}
-
-Write-Step "5/5 Reiniciando Apache e verificando"
+Write-Step "4/4 Reiniciando Apache e verificando"
 Restart-ApacheSafe -XamppPath $XamppPath | Out-Null
 
 $verifyScript = Join-Path $targetApp "scripts\verificar_instalacao.php"
@@ -170,5 +151,5 @@ Write-Host "============================================" -ForegroundColor Green
 Write-Host " ATUALIZACAO CONCLUIDA" -ForegroundColor Green
 Write-Host "============================================" -ForegroundColor Green
 Write-Host "Acesse: http://localhost/advocacia"
-Write-Host "Cadastros sincronizados; fotos e documentos locais preservados."
+Write-Host "Banco do cliente preservado; apenas estrutura atualizada (tabelas/colunas)."
 Write-Host ""

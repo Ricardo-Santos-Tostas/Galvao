@@ -97,6 +97,10 @@ if ($dataInicio && $dataFim) {
                 <div class="filtro-botoes">
                     <button type="submit" class="btn-filtro btn-filtro-primary">Pesquisar</button>
                     <a href="relatorio.php?tipo=<?= urlencode($tipo) ?>" class="btn-filtro btn-filtro-secondary">Limpar</a>
+                    <?php if ($tipo === 'audiencias' && Auth::podeEditar('cadastro')): ?>
+                    <button type="button" id="btnImportarPauta" class="btn-filtro btn-filtro-secondary">Importar</button>
+                    <input type="file" id="inputImportarPauta" accept=".xlsx" hidden>
+                    <?php endif; ?>
                 </div>
             </div>
             <p class="filtro-dica"><?= htmlspecialchars($filtroDica) ?></p>
@@ -136,6 +140,169 @@ if ($dataInicio && $dataFim) {
             </tbody>
         </table>
     </div>
+
+    <?php if ($tipo === 'audiencias' && Auth::podeEditar('cadastro')): ?>
+    <div class="modal-duplicado" id="modalImportacao" hidden>
+        <div class="modal-duplicado-backdrop" id="modalImportacaoBackdrop"></div>
+        <div class="modal-duplicado-panel" role="dialog" aria-labelledby="modalImportacaoTitulo">
+            <header class="modal-duplicado-header">
+                <h2 id="modalImportacaoTitulo">Resultado da importação</h2>
+                <button type="button" class="modal-duplicado-fechar" id="btnFecharImportacao" aria-label="Fechar">&times;</button>
+            </header>
+            <div class="modal-duplicado-corpo">
+                <p id="importacaoResumo"></p>
+                <div id="importacaoNaoEncontrados" hidden>
+                    <h3>Processos não encontrados no cadastro</h3>
+                    <div class="importacao-tabela-wrap">
+                        <table class="relatorio-tabela importacao-tabela" id="tabelaNaoEncontrados">
+                            <thead>
+                                <tr>
+                                    <th>Data</th>
+                                    <th>Hora</th>
+                                    <th>Nº Processo</th>
+                                    <th>Reclamante</th>
+                                    <th>Reclamado</th>
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                    <p class="importacao-pasta-dica">
+                        O relatório também foi salvo em:
+                        <strong>import/nao_encontrados/</strong>
+                    </p>
+                </div>
+                <p id="importacaoErros" class="duplicado-aviso" hidden></p>
+            </div>
+            <footer class="modal-duplicado-acoes">
+                <a href="#" id="btnBaixarRelatorio" class="btn-filtro btn-filtro-primary" hidden download>Baixar relatório Excel</a>
+                <button type="button" class="btn-filtro btn-filtro-secondary" id="btnFecharImportacao2">Fechar</button>
+            </footer>
+        </div>
+    </div>
+    <?php endif; ?>
+
     <script src="assets/js/print.js?v=3"></script>
+    <?php if ($tipo === 'audiencias' && Auth::podeEditar('cadastro')): ?>
+    <script>
+    (function () {
+        const btn = document.getElementById('btnImportarPauta');
+        const input = document.getElementById('inputImportarPauta');
+        const modal = document.getElementById('modalImportacao');
+        const resumo = document.getElementById('importacaoResumo');
+        const blocoNaoEnc = document.getElementById('importacaoNaoEncontrados');
+        const tbodyNaoEnc = document.querySelector('#tabelaNaoEncontrados tbody');
+        const errosEl = document.getElementById('importacaoErros');
+        const btnBaixar = document.getElementById('btnBaixarRelatorio');
+        const fecharBtns = [document.getElementById('btnFecharImportacao'), document.getElementById('btnFecharImportacao2')];
+        const backdrop = document.getElementById('modalImportacaoBackdrop');
+
+        if (!btn || !input || !modal) return;
+
+        const fecharModal = () => { modal.hidden = true; };
+        fecharBtns.forEach((b) => b?.addEventListener('click', fecharModal));
+        backdrop?.addEventListener('click', fecharModal);
+
+        const escapar = (texto) => {
+            const el = document.createElement('span');
+            el.textContent = texto ?? '';
+            return el.innerHTML;
+        };
+
+        const nomeReclamante = (item) => {
+            const rte = (item.reclamante || '').trim();
+            const rda = (item.reclamada || '').trim();
+            const pareceNome = (t) => t && !/\b(zoom\.us|sala|impar|auxiliar|videoconfer)/i.test(t);
+            if (pareceNome(rte)) return rte;
+            if (pareceNome(rda)) return rda;
+            return rte || rda;
+        };
+
+        const mostrarResultado = (dados) => {
+            resumo.textContent = 'Registros atualizados: ' + (dados.atualizados || 0) + '.';
+
+            const lista = dados.nao_encontrados || [];
+            if (lista.length > 0) {
+                blocoNaoEnc.hidden = false;
+                tbodyNaoEnc.innerHTML = lista.map((item) => `
+                    <tr>
+                        <td>${escapar(item.data)}</td>
+                        <td>${escapar(item.hora)}</td>
+                        <td>${escapar(item.processo)}</td>
+                        <td>${escapar(nomeReclamante(item))}</td>
+                        <td>${escapar(item.reclamada)}</td>
+                    </tr>
+                `).join('');
+            } else {
+                blocoNaoEnc.hidden = true;
+                tbodyNaoEnc.innerHTML = '';
+            }
+
+            if (dados.erros && dados.erros.length) {
+                errosEl.hidden = false;
+                errosEl.textContent = 'Avisos: ' + dados.erros.join(' | ');
+            } else {
+                errosEl.hidden = true;
+                errosEl.textContent = '';
+            }
+
+            if (dados.relatorio && dados.relatorio.url) {
+                btnBaixar.hidden = false;
+                btnBaixar.href = dados.relatorio.url;
+                btnBaixar.setAttribute('download', dados.relatorio.arquivo || 'nao_encontrados.xlsx');
+                btnBaixar.click();
+            } else {
+                btnBaixar.hidden = true;
+                btnBaixar.removeAttribute('href');
+            }
+
+            modal.hidden = false;
+        };
+
+        btn.addEventListener('click', () => input.click());
+
+        input.addEventListener('change', async () => {
+            const arquivo = input.files && input.files[0];
+            input.value = '';
+            if (!arquivo) return;
+
+            if (!/\.xlsx$/i.test(arquivo.name)) {
+                alert('Selecione um arquivo Excel (.xlsx) com a aba Trabalhista.');
+                return;
+            }
+
+            const form = new FormData();
+            form.append('arquivo', arquivo);
+
+            btn.disabled = true;
+            const textoOriginal = btn.textContent;
+            btn.textContent = 'Importando...';
+
+            try {
+                const resp = await fetch('api/?acao=importar_pauta_trabalhista', {
+                    method: 'POST',
+                    body: form,
+                });
+                const dados = await resp.json();
+
+                if (!resp.ok || dados.erro) {
+                    throw new Error(dados.erro || 'Falha na importação.');
+                }
+
+                mostrarResultado(dados);
+
+                if ((dados.atualizados || 0) > 0) {
+                    setTimeout(() => window.location.reload(), 1500);
+                }
+            } catch (err) {
+                alert(err.message || 'Erro ao importar a planilha.');
+            } finally {
+                btn.disabled = false;
+                btn.textContent = textoOriginal;
+            }
+        });
+    })();
+    </script>
+    <?php endif; ?>
 </body>
 </html>

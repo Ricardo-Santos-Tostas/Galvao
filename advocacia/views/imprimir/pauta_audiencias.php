@@ -2,7 +2,7 @@
 /** @var array $gruposPorData */
 
 $tituloPagina = 'Audiências · Impressão';
-$dicaImpressao = 'Preencha as observações antes de imprimir. Cada dia de audiência será impresso em uma folha separada. Na janela de impressão, desmarque <strong>Cabeçalhos e rodapés</strong> do navegador.';
+$dicaImpressao = 'Preencha as observações à direita antes de imprimir — elas serão salvas automaticamente. Cada dia de audiência será impresso em uma folha separada. Na janela de impressão, desmarque <strong>Cabeçalhos e rodapés</strong> do navegador.';
 $estilosExtras = <<<'CSS'
     .pauta-dia-pagina {
         margin-bottom: 28px;
@@ -125,7 +125,7 @@ CSS;
 </head>
 <body>
     <div class="botoes">
-        <button type="button" onclick="window.print()">Imprimir</button>
+        <button type="button" id="btnImprimirPauta">Imprimir</button>
         <button type="button" onclick="window.close()">Fechar</button>
         <?php if ($dicaImpressao !== ''): ?>
         <p class="botoes-dica"><?= $dicaImpressao ?></p>
@@ -184,7 +184,8 @@ CSS;
                 <?php endif; ?>
             </div>
             <textarea class="pauta-obs" rows="3" spellcheck="false"
-                      placeholder="Ex.: INICIAL (audiencia17vtssa) (ZOOM)"></textarea>
+                      data-cadastro="<?= (int) ($reg['CADASTRO'] ?? 0) ?>"
+                      placeholder="Ex.: INICIAL (audiencia17vtssa) (ZOOM)"><?= htmlspecialchars(trim((string) ($reg['cxpra_a'] ?? ''))) ?></textarea>
         </article>
         <?php endforeach; ?>
         <?php
@@ -202,6 +203,45 @@ CSS;
         };
         ajustar();
         campo.addEventListener('input', ajustar);
+    });
+
+    document.getElementById('btnImprimirPauta')?.addEventListener('click', async () => {
+        const btn = document.getElementById('btnImprimirPauta');
+        const campos = [...document.querySelectorAll('.pauta-obs')];
+        const observacoes = campos
+            .map((campo) => ({
+                id: parseInt(campo.dataset.cadastro || '0', 10),
+                texto: campo.value.trim(),
+            }))
+            .filter((item) => item.id > 0);
+
+        if (observacoes.length > 0) {
+            btn.disabled = true;
+            const textoOriginal = btn.textContent;
+            btn.textContent = 'Salvando...';
+
+            try {
+                const resp = await fetch('api/?acao=salvar_observacoes_pauta', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ observacoes }),
+                });
+                const dados = await resp.json();
+                if (!resp.ok || dados.erro) {
+                    throw new Error(dados.erro || 'Não foi possível salvar as observações.');
+                }
+            } catch (err) {
+                alert(err.message || 'Erro ao salvar observações.');
+                btn.disabled = false;
+                btn.textContent = textoOriginal;
+                return;
+            }
+
+            btn.disabled = false;
+            btn.textContent = textoOriginal;
+        }
+
+        window.print();
     });
 </script>
 </body>
