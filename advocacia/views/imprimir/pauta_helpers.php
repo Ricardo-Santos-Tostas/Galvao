@@ -97,7 +97,7 @@ function pautaFormatarJunta(?string $junta): string
     return $texto . ' VARA';
 }
 
-function pautaFormatarHora(?string $hora): string
+function pautaNormalizarHora(?string $hora): string
 {
     $texto = trim((string) $hora);
     if ($texto === '') {
@@ -105,10 +105,29 @@ function pautaFormatarHora(?string $hora): string
     }
 
     if (preg_match('/^(\d{1,2}):(\d{2})/', $texto, $m)) {
-        return (int) $m[1] . ':' . $m[2] . ' hs:';
+        return sprintf('%02d:%02d', (int) $m[1], (int) $m[2]);
     }
 
-    return $texto . ' hs:';
+    $ts = strtotime($texto);
+    if ($ts !== false) {
+        return date('H:i', $ts);
+    }
+
+    return $texto;
+}
+
+function pautaFormatarHora(?string $hora): string
+{
+    $normalizada = pautaNormalizarHora($hora);
+    if ($normalizada === '') {
+        return '';
+    }
+
+    if (preg_match('/^\d{2}:\d{2}$/', $normalizada)) {
+        return $normalizada . ' hs:';
+    }
+
+    return $normalizada . ' hs:';
 }
 
 function pautaTextoMaiusculo(?string $valor): string

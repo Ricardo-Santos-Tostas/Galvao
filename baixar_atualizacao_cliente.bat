@@ -6,8 +6,8 @@ echo ============================================
 echo  ATUALIZAR SISTEMA - Moura Galvao
 echo ============================================
 echo.
-echo Atualiza codigo e sincroniza cadastros do GitHub.
-echo Fotos e documentos locais NAO sao apagados.
+echo Atualiza codigo e estrutura do banco (tabelas/colunas).
+echo Dados do cliente NAO sao alterados.
 echo.
 
 powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0baixar_atualizacao_cliente.ps1"

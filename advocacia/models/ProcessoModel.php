@@ -778,8 +778,8 @@ class ProcessoModel
     {
         $texto = trim((string) $valor);
 
-        if (preg_match('/^\d{2}:\d{2}/', $texto)) {
-            return substr($texto, 0, 5);
+        if (preg_match('/^(\d{1,2}):(\d{2})/', $texto, $m)) {
+            return sprintf('%02d:%02d', (int) $m[1], (int) $m[2]);
         }
 
         $timestamp = strtotime($texto);

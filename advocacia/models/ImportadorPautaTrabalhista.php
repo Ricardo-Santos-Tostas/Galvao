@@ -8,6 +8,7 @@ require_once __DIR__ . '/../lib/XlsxReader.php';
 require_once __DIR__ . '/ProcessoCNJ.php';
 require_once __DIR__ . '/ProcessoModel.php';
 require_once __DIR__ . '/RelatorioPautaNaoEncontrados.php';
+require_once __DIR__ . '/../views/imprimir/pauta_helpers.php';
 
 final class ImportadorPautaTrabalhista
 {
@@ -112,6 +113,12 @@ final class ImportadorPautaTrabalhista
         foreach ($linhas as $linha) {
             foreach ($linha as $celula) {
                 $celula = trim((string) $celula);
+                if ($celula !== '' && is_numeric($celula)) {
+                    $convertido = XlsxReader::serialParaTexto((float) $celula);
+                    if ($convertido !== null) {
+                        $celula = $convertido;
+                    }
+                }
                 if ($celula !== '') {
                     $textos[] = $celula;
                 }
@@ -262,11 +269,7 @@ final class ImportadorPautaTrabalhista
 
     private function formatarHora(string $hora): string
     {
-        if (preg_match('/^(\d{1,2}):(\d{2})/', $hora, $m)) {
-            return (int) $m[1] . ':' . $m[2];
-        }
-
-        return $hora;
+        return pautaNormalizarHora($hora);
     }
 
     private function montarIndiceProcessos(): void

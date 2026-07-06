@@ -162,7 +162,37 @@ final class XlsxReader
             }
         }
 
+        if ($v !== '' && is_numeric($v)) {
+            $formatado = self::serialParaTexto((float) $v);
+            if ($formatado !== null) {
+                return $formatado;
+            }
+        }
+
         return trim($v);
+    }
+
+    /**
+     * Converte número serial do Excel (data/hora) para texto legível.
+     */
+    public static function serialParaTexto(float $serial): ?string
+    {
+        if ($serial > 0 && $serial < 1) {
+            $minutos = (int) round($serial * 24 * 60);
+            $h = intdiv($minutos, 60) % 24;
+            $m = $minutos % 60;
+
+            return sprintf('%02d:%02d', $h, $m);
+        }
+
+        if ($serial >= 30000 && $serial < 1000000) {
+            $unix = (int) round(($serial - 25569) * 86400);
+            $dt = (new DateTimeImmutable('@' . $unix));
+
+            return $dt->format('d/m/Y H:i');
+        }
+
+        return null;
     }
 
     private static function colunaParaIndice(string $letters): int
