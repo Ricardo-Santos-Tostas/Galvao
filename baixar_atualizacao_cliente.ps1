@@ -85,8 +85,26 @@ if (-not (Test-Path $mysqlExe)) {
 
 Write-Step "1/4 Baixando codigo do GitHub"
 Push-Location $repoPath
+
+Write-Host "  Descartando alteracoes locais nos scripts de atualizacao..."
+& git restore baixar_atualizacao_cliente.bat baixar_atualizacao_cliente.ps1 2>$null
+
 & git pull --ff-only
-if ($LASTEXITCODE -ne 0) { throw "Falha no git pull. Verifique internet e login no GitHub." }
+if ($LASTEXITCODE -ne 0) {
+    Write-Host "  Tentando atualizacao forcada do codigo (git reset)..." -ForegroundColor Yellow
+    & git fetch origin
+    if ($LASTEXITCODE -ne 0) {
+        Pop-Location
+        throw "Falha no git fetch. Verifique internet e login no GitHub."
+    }
+    & git reset --hard origin/main
+    if ($LASTEXITCODE -ne 0) {
+        Pop-Location
+        throw "Falha ao atualizar repositorio do GitHub."
+    }
+    Write-Host "  Repositorio atualizado (banco MySQL do cliente nao e afetado)."
+}
+
 Pop-Location
 
 if (-not (Test-Path $sourceApp)) {
