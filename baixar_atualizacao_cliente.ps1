@@ -153,5 +153,5 @@ Write-Host " ATUALIZACAO CONCLUIDA" -ForegroundColor Green
 Write-Host "============================================" -ForegroundColor Green
 Write-Host "Acesse: http://localhost/advocacia"
 Write-Host "Banco do cliente preservado (cadastros, andamento, usuarios)."
-Write-Host "Nao importa backup do Git — apenas atualiza codigo e estrutura."
+Write-Host "Nao importa backup do Git - apenas atualiza codigo e estrutura."
 Write-Host ""
