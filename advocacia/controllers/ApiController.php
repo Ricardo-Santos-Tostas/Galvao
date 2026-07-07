@@ -267,9 +267,10 @@ class ApiController
             }
             $dados['CADASTRO'] = $substituirId;
             $idForm = $substituirId;
-        } elseif (!$forcarNovo) {
+        } elseif (!$forcarNovo && $idExcluirDup === 0) {
+            // Aviso de duplicado apenas ao criar cadastro novo (nao ao editar existente).
             $duplicados = $this->model->buscarDuplicados(
-                $idExcluirDup,
+                0,
                 trim((string) ($dados['RECLAMANTE'] ?? '')),
                 $dados['CPF'] ?? null
             );
