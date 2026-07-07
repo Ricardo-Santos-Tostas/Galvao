@@ -5,6 +5,8 @@
 
 require_once __DIR__ . '/../config/database.php';
 
+require_once __DIR__ . '/../lib/TextoMultilinha.php';
+
 class LogModel
 {
     private PDO $db;
@@ -226,7 +228,13 @@ class LogModel
             $valorAntes = trim((string) ($antes[$campo] ?? ''));
             $valorDepois = trim((string) ($depois[$campo] ?? ''));
 
-            if ($valorAntes === $valorDepois) {
+            if ($campo === 'ANDAMENTO') {
+                if (TextoMultilinha::iguais($valorAntes, $valorDepois)) {
+                    continue;
+                }
+                $valorAntes = TextoMultilinha::normalizar($valorAntes) ?? '';
+                $valorDepois = TextoMultilinha::normalizar($valorDepois) ?? '';
+            } elseif ($valorAntes === $valorDepois) {
                 continue;
             }
 

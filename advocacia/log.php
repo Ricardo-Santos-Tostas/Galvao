@@ -7,6 +7,17 @@ require_once __DIR__ . '/config/auth.php';
 require_once __DIR__ . '/models/LogModel.php';
 require_once __DIR__ . '/models/ProcessoModel.php';
 
+function logValorHtml(?string $valor): string
+{
+    if ($valor === null || $valor === '' || $valor === '(vazio)') {
+        return '<em class="log-vazio">(vazio)</em>';
+    }
+
+    $texto = str_replace(["\r\n", "\r", '_x000D_', '_x000A_'], "\n", $valor);
+
+    return nl2br(htmlspecialchars($texto, ENT_QUOTES, 'UTF-8'));
+}
+
 Auth::requerAdmin();
 
 $model = new LogModel();
@@ -91,7 +102,7 @@ function badgeAcao(string $acao): string
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Playfair+Display:wght@500;600;700&display=swap" rel="stylesheet" media="screen">
-    <link rel="stylesheet" href="assets/css/style.css?v=6">
+    <link rel="stylesheet" href="assets/css/style.css?v=7">
     <?php include __DIR__ . '/views/partials/favicon.php'; ?>
 </head>
 <body class="relatorio page-log">
@@ -218,10 +229,17 @@ function badgeAcao(string $acao): string
                         <ul>
                             <?php foreach ($reg['detalhes']['alteracoes'] as $alt): ?>
                             <li>
-                                <strong><?= htmlspecialchars($alt['rotulo']) ?>:</strong>
-                                <span class="log-valor-antes"><?= htmlspecialchars($alt['antes']) ?></span>
-                                <span class="log-seta">→</span>
-                                <span class="log-valor-depois"><?= htmlspecialchars($alt['depois']) ?></span>
+                                <strong class="log-campo-nome"><?= htmlspecialchars($alt['rotulo']) ?></strong>
+                                <div class="log-diff">
+                                    <div class="log-diff-bloco log-diff-antes">
+                                        <span class="log-diff-label">Antes</span>
+                                        <div class="log-diff-valor"><?= logValorHtml($alt['antes'] ?? '') ?></div>
+                                    </div>
+                                    <div class="log-diff-bloco log-diff-depois">
+                                        <span class="log-diff-label">Depois</span>
+                                        <div class="log-diff-valor"><?= logValorHtml($alt['depois'] ?? '') ?></div>
+                                    </div>
+                                </div>
                             </li>
                             <?php endforeach; ?>
                         </ul>

@@ -2565,6 +2565,76 @@ body.relatorio {
     line-height: 1.5;
 }
 
+.log-campo-nome {
+    display: block;
+    margin-bottom: 8px;
+    font-size: 13px;
+    color: var(--text);
+}
+
+.log-diff {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.log-diff-bloco {
+    border-radius: 8px;
+    padding: 10px 12px;
+    border: 1px solid transparent;
+}
+
+.log-diff-label {
+    display: block;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    margin-bottom: 6px;
+}
+
+.log-diff-valor {
+    white-space: pre-wrap;
+    word-break: break-word;
+    font-size: 13px;
+    line-height: 1.55;
+}
+
+.log-diff-antes {
+    background: #fef2f2;
+    border-color: #fecaca;
+}
+
+.log-diff-antes .log-diff-label {
+    color: #b91c1c;
+}
+
+.log-diff-antes .log-diff-valor {
+    color: #991b1b;
+    text-decoration: line-through;
+    text-decoration-color: rgba(185, 28, 28, 0.55);
+}
+
+.log-diff-depois {
+    background: #f0fdf4;
+    border-color: #bbf7d0;
+}
+
+.log-diff-depois .log-diff-label {
+    color: #15803d;
+}
+
+.log-diff-depois .log-diff-valor {
+    color: #166534;
+    font-weight: 600;
+}
+
+.log-vazio {
+    color: var(--text-muted);
+    font-style: italic;
+    font-weight: 400;
+}
+
 .log-valor-antes {
     color: #b91c1c;
     text-decoration: line-through;

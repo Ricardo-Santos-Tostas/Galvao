@@ -121,7 +121,8 @@ $migrations = @(
     "atualizar_banco_anexos.php",
     "atualizar_banco_pericias.php",
     "atualizar_banco_usuarios.php",
-    "atualizar_banco_log.php"
+    "atualizar_banco_log.php",
+    "corrigir_andamento_multilinha.php"
 )
 
 foreach ($script in $migrations) {
@@ -151,5 +152,6 @@ Write-Host "============================================" -ForegroundColor Green
 Write-Host " ATUALIZACAO CONCLUIDA" -ForegroundColor Green
 Write-Host "============================================" -ForegroundColor Green
 Write-Host "Acesse: http://localhost/advocacia"
-Write-Host "Banco do cliente preservado; apenas estrutura atualizada (tabelas/colunas)."
+Write-Host "Banco do cliente preservado (cadastros, andamento, usuarios)."
+Write-Host "Nao importa backup do Git — apenas atualiza codigo e estrutura."
 Write-Host ""

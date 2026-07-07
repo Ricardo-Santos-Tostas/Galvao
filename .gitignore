@@ -14,12 +14,14 @@ advocacia/import/planilha_access.csv
 
 # Relatorios gerados na importacao da pauta
 advocacia/import/nao_encontrados/*.xlsx
+advocacia/import/nao_encontrados/*.csv
 
 # Planilhas locais de teste
 Dados-atualizados.xlsx
 
 # Backups locais do MySQL (nao versionar)
 advocacia/sql/backups/
+backup-banco/
 
 # Banco Access local (nao versionar)
 *.mdb

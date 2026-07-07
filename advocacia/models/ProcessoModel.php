@@ -4,6 +4,7 @@
  */
 
 require_once __DIR__ . '/../config/database.php';
+require_once __DIR__ . '/../lib/TextoMultilinha.php';
 require_once __DIR__ . '/TelefoneBr.php';
 
 class ProcessoModel
@@ -414,6 +415,9 @@ class ProcessoModel
             if ($campo === 'AREA' && $valor !== null) {
                 $valor = trim((string) $valor) ?: null;
             }
+            if ($campo === 'ANDAMENTO') {
+                $valor = TextoMultilinha::normalizar($valor !== null ? (string) $valor : null);
+            }
             $valores[$campo] = $valor;
         }
 
@@ -753,6 +757,10 @@ class ProcessoModel
 
         if (in_array($coluna, TelefoneBr::campos(), true)) {
             return TelefoneBr::normalizar((string) $valor);
+        }
+
+        if ($coluna === 'ANDAMENTO') {
+            return TextoMultilinha::normalizar((string) $valor);
         }
 
         return (string) $valor;
